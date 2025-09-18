@@ -1,5 +1,6 @@
 "use client";
 
+import Head from "next/head";
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -98,7 +99,14 @@ export default function SignIn() {
   ];
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 transition-all duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+    <>
+      <Head>
+        <title>Sign In - WholesaleHub</title>
+        <meta name="description" content="Sign in to your WholesaleHub account and access thousands of wholesale products from verified suppliers." />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+      </Head>
+      
+      <div className={`min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 transition-all duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
         {/* Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse"></div>
@@ -114,10 +122,10 @@ export default function SignIn() {
                 <div className="animate-fade-in">
                   <h1 className="text-4xl xl:text-5xl font-bold text-gray-900 mb-6">
                     Welcome Back to 
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-600"> DukanBaz</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-600"> WholesaleHub</span>
                   </h1>
                   <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                    Continue your wholesale journey with access to thousands of verified suppliers and premium products in Pakistan.
+                    Continue your wholesale journey with access to thousands of verified suppliers and premium products worldwide.
                   </p>
                 </div>
 
@@ -134,7 +142,7 @@ export default function SignIn() {
 
                 {/* Features */}
                 <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Why Thousands Trust DukanBaz</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">Why Thousands Trust WholesaleHub</h3>
                   <div className="grid grid-cols-2 gap-4">
                     {features.map((feature, index) => (
                       <div key={index} className="flex items-start gap-3">
@@ -334,12 +342,12 @@ export default function SignIn() {
                       <div className="text-xs text-gray-600">{stat.label}</div>
                     </div>
                   ))}
-                </div>      
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
-}
+} 
