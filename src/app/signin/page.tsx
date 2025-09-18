@@ -22,18 +22,6 @@ import {
   FiTruck
 } from "react-icons/fi";
 
-export const metadata = {
-  title: "Sign In - DukanBaz",
-  description: "Sign in to your DukanBaz account and access thousands of wholesale products from verified suppliers in Pakistan.",
-};
-
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-};
-
 export default function SignIn() {
   const [form, setForm] = useState({ email: "", password: "", remember: false });
   const [error, setError] = useState("");
