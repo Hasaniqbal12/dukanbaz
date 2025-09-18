@@ -4,7 +4,7 @@ import User from '@/models/User';
 import { dbConnect } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
 
-export const authOptions = {
+const authOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -12,14 +12,21 @@ export const authOptions = {
         email: { label: 'Email', type: 'email', placeholder: 'user@example.com' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials: any) {
         try {
           await dbConnect();
-          const user = await User.findOne({ email: credentials?.email });
           
-          if (user && credentials?.password) {
-            // Compare password with bcrypt
+          if (!credentials?.email || !credentials?.password) {
+            console.log('Missing credentials');
+            return null;
+          }
+
+          const user = await User.findOne({ email: credentials.email });
+          console.log('User found:', user ? 'Yes' : 'No');
+          
+          if (user && credentials.password) {
             const isValidPassword = await bcrypt.compare(credentials.password, user.password);
+            console.log('Password valid:', isValidPassword);
             
             if (isValidPassword) {
               return {
@@ -39,7 +46,7 @@ export const authOptions = {
     }),
   ],
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt' as const,
   },
   callbacks: {
     async jwt({ token, user }: { token: any; user: any }) {
@@ -50,19 +57,20 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
-      if (token) {
+      if (token && session.user) {
         session.user.id = token.id;
         session.user.role = token.role;
       }
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
   pages: {
     signIn: '/signin',
   },
+  debug: process.env.NODE_ENV === 'development',
 };
 
 const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST }; 
+export { handler as GET, handler as POST };
+export { authOptions }; 

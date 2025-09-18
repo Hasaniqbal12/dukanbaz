@@ -101,8 +101,8 @@ export default function SignIn() {
   return (
     <>
       <Head>
-        <title>Sign In - WholesaleHub</title>
-        <meta name="description" content="Sign in to your WholesaleHub account and access thousands of wholesale products from verified suppliers." />
+        <title>Sign In - DukanBaz</title>
+        <meta name="description" content="Sign in to your DukanBaz account and access thousands of wholesale products from verified suppliers in Pakistan." />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </Head>
       
@@ -122,7 +122,7 @@ export default function SignIn() {
                 <div className="animate-fade-in">
                   <h1 className="text-4xl xl:text-5xl font-bold text-gray-900 mb-6">
                     Welcome Back to 
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-600"> WholesaleHub</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-600"> DukanBaz</span>
                   </h1>
                   <p className="text-xl text-gray-600 mb-8 leading-relaxed">
                     Continue your wholesale journey with access to thousands of verified suppliers and premium products worldwide.
@@ -142,7 +142,7 @@ export default function SignIn() {
 
                 {/* Features */}
                 <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Why Thousands Trust WholesaleHub</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">Why Thousands Trust DukanBaz</h3>
                   <div className="grid grid-cols-2 gap-4">
                     {features.map((feature, index) => (
                       <div key={index} className="flex items-start gap-3">
