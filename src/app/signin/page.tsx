@@ -66,7 +66,6 @@ export default function SignIn() {
         email: form.email,
         password: form.password,
         redirect: false,
-        callbackUrl: '/',
       });
 
       console.log('Signin result:', result);
@@ -79,10 +78,8 @@ export default function SignIn() {
         setSuccess("Sign in successful! Redirecting...");
         console.log('Signin successful, redirecting...');
         
-        // Force session refresh and redirect
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 1000);
+        // Force session refresh and redirect immediately
+        window.location.href = "/";
       } else {
         setError("Sign in failed. Please try again.");
         setIsLoading(false);
