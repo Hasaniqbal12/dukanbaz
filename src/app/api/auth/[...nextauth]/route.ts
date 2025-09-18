@@ -1,10 +1,11 @@
 import NextAuth from 'next-auth';
+import type { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import User from '@/models/User';
 import { dbConnect } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
 
-const authOptions = {
+const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -47,6 +48,11 @@ const authOptions = {
   ],
   session: {
     strategy: 'jwt' as const,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async jwt({ token, user }: { token: any; user: any }) {
@@ -71,6 +77,6 @@ const authOptions = {
   debug: process.env.NODE_ENV === 'development',
 };
 
-const handler = NextAuth(authOptions);
+const handler = NextAuth(authOptions) as any;
 export { handler as GET, handler as POST };
 export { authOptions }; 

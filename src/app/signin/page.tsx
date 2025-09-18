@@ -60,25 +60,35 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
+      console.log('Attempting signin with:', { email: form.email });
+      
       const result = await signIn('credentials', {
         email: form.email,
         password: form.password,
         redirect: false,
+        callbackUrl: '/',
       });
 
+      console.log('Signin result:', result);
+
       if (result?.error) {
+        console.error('Signin error:', result.error);
         setError("Invalid email or password. Please try again.");
         setIsLoading(false);
-      } else {
+      } else if (result?.ok) {
         setSuccess("Sign in successful! Redirecting...");
-        setIsLoading(false);
+        console.log('Signin successful, redirecting...');
         
-        // Redirect after success
+        // Force session refresh and redirect
         setTimeout(() => {
-          router.push("/");
+          window.location.href = "/";
         }, 1000);
+      } else {
+        setError("Sign in failed. Please try again.");
+        setIsLoading(false);
       }
-    } catch {
+    } catch (error) {
+      console.error('Signin exception:', error);
       setError("An error occurred during sign in. Please try again.");
       setIsLoading(false);
     }
