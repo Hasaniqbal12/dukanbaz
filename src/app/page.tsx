@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from 'react';
 import { FiStar, FiSearch, FiShield, FiTruck, FiGlobe, FiArrowRight, FiUsers, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import PageLayout from '@/components/PageLayout';
 
@@ -19,117 +20,6 @@ interface Product {
   ranking?: number;
   isNew?: boolean;
 }
-
-const newProducts: Product[] = [
-  {
-    id: 11,
-    title: "Smart Fitness Watch",
-    img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
-    price: "Rs 7,000",
-    moq: "50 pcs",
-    supplier: "Islamabad Tech Ltd.",
-    rating: 4.5,
-    verified: true,
-    isNew: true,
-  },
-  {
-    id: 12,
-    title: "Eco-Friendly Yoga Mat",
-    img: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=400&h=400&fit=crop",
-    price: "Rs 2,500",
-    originalPrice: "Rs 3,600",
-    moq: "50 pcs",
-    supplier: "Lahore Fitness Pro Ltd.",
-    rating: 4.7,
-    verified: true,
-    discount: 31,
-    isNew: true,
-  },
-];
-
-const forYouProducts: Product[] = [
-  {
-    id: 6,
-    title: "Ceramic Flower Vase",
-    img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop",
-    price: "PKR 1,700 - PKR 3,000",
-    moq: "50 pcs",
-    supplier: "Multan Ceramics",
-    rating: 4.6,
-    verified: true,
-  },
-  {
-    id: 7,
-    title: "Stainless Steel Kitchen Set",
-    img: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop",
-    price: "PKR 8,500 - PKR 12,000",
-    moq: "25 pcs",
-    supplier: "Gujranwala Steel Works",
-    rating: 4.7,
-    verified: true,
-  },
-];
-
-const featuredProducts: Product[] = [
-  {
-    id: 21,
-    title: "Solar LED Street Light",
-    img: "https://images.unsplash.com/photo-1564094467889-f4f7e3a00270?w=400&h=400&fit=crop",
-    price: "Rs 15,000",
-    moq: "5 pcs",
-    supplier: "Renewable Energy Solutions",
-    rating: 4.8,
-    verified: true,
-  },
-  // Generate 99 more products programmatically
-  ...Array.from({ length: 99 }, (_, index) => {
-    const productId = 22 + index;
-    const productTypes = [
-      { type: "Electronics", img: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=400&h=400&fit=crop" },
-      { type: "Machinery", img: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop" },
-      { type: "Textiles", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop" },
-      { type: "Hardware", img: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&h=400&fit=crop" },
-      { type: "Chemicals", img: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400&h=400&fit=crop" },
-      { type: "Food Products", img: "https://images.unsplash.com/photo-1506617420156-8e4536971650?w=400&h=400&fit=crop" },
-      { type: "Medical Equipment", img: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop" },
-      { type: "Construction", img: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&h=400&fit=crop" },
-      { type: "Automotive", img: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400&h=400&fit=crop" },
-      { type: "Packaging", img: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&h=400&fit=crop" },
-    ];
-    
-    const suppliers = [
-      "Global Tech Solutions", "Premium Manufacturing Co", "Quality Exports Ltd", 
-      "Industrial Partners", "Elite Suppliers", "Trusted Wholesale Hub", 
-      "Professional Trading Co", "Advanced Industries", "Reliable Exports", 
-      "Top Grade Manufacturing", "Excellence Trading", "Prime Industrial Co",
-      "Superior Products Ltd", "Quality First Trading", "Professional Exports",
-      "Advanced Manufacturing", "Elite Industrial Co", "Premium Trading Hub",
-      "Global Quality Solutions", "Industrial Excellence Ltd"
-    ];
-
-    const productType = productTypes[index % productTypes.length];
-    const supplier = suppliers[index % suppliers.length];
-    const basePrice = 1000 + (index * 50);
-    const rating = 4.0 + (Math.random() * 1.0);
-    const moqOptions = ["10 pcs", "25 pcs", "50 pcs", "100 pcs", "500 pcs", "1000 pcs"];
-    
-    return {
-      id: productId,
-      title: `${productType.type} Product ${productId}`,
-      img: productType.img,
-      price: `Rs ${basePrice.toLocaleString()}`,
-      moq: moqOptions[index % moqOptions.length],
-      supplier: supplier,
-      rating: Math.round(rating * 10) / 10,
-      verified: index % 3 === 0,
-      isNew: index % 5 === 0,
-      discount: index % 4 === 0 ? Math.floor(Math.random() * 30) + 10 : undefined,
-      originalPrice: index % 4 === 0 ? `Rs ${Math.floor(basePrice * 1.3).toLocaleString()}` : undefined,
-    };
-  })
-];
-
-
 
 const features = [
   {
@@ -159,6 +49,89 @@ const features = [
 ];
 
 export default function Home() {
+  const [newProducts, setNewProducts] = useState<Product[]>([]);
+  const [forYouProducts, setForYouProducts] = useState<Product[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products?limit=20&sort=createdAt&order=desc');
+        const data = await response.json();
+        
+        if (data.success && data.products) {
+          // Transform API data to match component interface
+          interface ApiProduct {
+            _id: string;
+            title: string;
+            images?: string[];
+            price: number;
+            originalPrice?: number;
+            minimumOrderQuantity?: number;
+            supplier?: { name?: string; verified?: boolean };
+            rating?: number;
+            discount?: number;
+            createdAt: string;
+          }
+          
+          const transformedProducts = data.products.map((product: ApiProduct) => ({
+            id: product._id,
+            title: product.title,
+            img: product.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
+            price: `Rs ${product.price?.toLocaleString()}`,
+            originalPrice: product.originalPrice ? `Rs ${product.originalPrice.toLocaleString()}` : undefined,
+            moq: `${product.minimumOrderQuantity || 1} pcs`,
+            supplier: product.supplier?.name || 'Verified Supplier',
+            rating: product.rating || 4.0,
+            verified: product.supplier?.verified || false,
+            discount: product.discount,
+            isNew: new Date(product.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+          }));
+          
+          setNewProducts(transformedProducts.slice(0, 6));
+          setForYouProducts(transformedProducts.slice(6, 12));
+          setFeaturedProducts(transformedProducts);
+        }
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+        // Fallback to sample data
+        const sampleProducts = [
+          {
+            id: 1,
+            title: "Smart Fitness Watch",
+            img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
+            price: "Rs 7,000",
+            moq: "50 pcs",
+            supplier: "Islamabad Tech Ltd.",
+            rating: 4.5,
+            verified: true,
+            isNew: true,
+          },
+          {
+            id: 2,
+            title: "Eco-Friendly Yoga Mat",
+            img: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=400&h=400&fit=crop",
+            price: "Rs 2,500",
+            originalPrice: "Rs 3,600",
+            moq: "50 pcs",
+            supplier: "Lahore Fitness Pro Ltd.",
+            rating: 4.7,
+            verified: true,
+            discount: 31,
+            isNew: true,
+          }
+        ];
+        setNewProducts(sampleProducts);
+        setForYouProducts(sampleProducts);
+        setFeaturedProducts(sampleProducts);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
   const scrollContainer = (containerId: string, direction: 'left' | 'right') => {
     const container = document.getElementById(containerId);
     if (container) {
@@ -245,14 +218,14 @@ export default function Home() {
 
   return (
     <PageLayout 
-      title="WholesaleHub - Pakistan's Premier B2B Marketplace" 
-      description="Connect with verified suppliers and buyers across Pakistan. Find quality products, negotiate bulk deals, and grow your business."
-      showHeader={true}
-      showFooter={true}
-      showMegaMenu={true}
-      backgroundPattern="gradient"
-      containerMaxWidth="full"
-    >
+        title="DukanBaz - Pakistan's Premier B2B Marketplace" 
+        description="Connect with verified suppliers and buyers across Pakistan. Find quality products, negotiate bulk deals, and grow your business."
+        showHeader={true}
+        showFooter={true}
+        showMegaMenu={true}
+        backgroundPattern="gradient"
+        containerMaxWidth="full"
+      >
       {/* Modern Hero Section - Hidden on Mobile */}
       <section className="hidden md:block relative bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 text-white overflow-hidden">
         <div className="absolute inset-0 bg-black/20" />
@@ -263,14 +236,11 @@ export default function Home() {
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="space-y-6 sm:space-y-8">
                 <div className="space-y-3 sm:space-y-4">
-                  <h1 className="text-3xl sm:text-4xl lg:text-7xl font-bold sm:font-bold leading-tight">
-                    Find Your Next
-                    <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                      Business Partner
-                    </span>
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
+                    Pakistan&apos;s Premier <span className="text-yellow-400">B2B Marketplace</span>
                   </h1>
-                  <p className="text-base sm:text-lg lg:text-2xl text-gray-200 leading-relaxed font-normal">
-                    Connect with verified suppliers and buyers across Pakistan. Quality products, competitive prices, secure transactions.
+                  <p className="text-lg sm:text-xl lg:text-2xl mb-6 sm:mb-8 text-indigo-100 max-w-2xl">
+                    Connect with verified suppliers and buyers across Pakistan. Source quality products, negotiate bulk deals, and grow your business with DukanBaz.
                   </p>
                 </div>
                 
@@ -492,10 +462,10 @@ export default function Home() {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold sm:font-bold mb-4 sm:mb-6">Ready to Grow Your Business?</h2>
             <p className="text-base sm:text-lg lg:text-2xl mb-6 sm:mb-8 lg:mb-10 text-indigo-100 font-normal">Join thousands of successful businesses on WholesaleHub</p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Link href="/signup?role=buyer" className="bg-white text-indigo-600 px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-sm sm:text-base lg:text-lg hover:bg-gray-100 transition-colors shadow-lg">
+              <Link href="/register?role=buyer" className="bg-white text-indigo-600 px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-sm sm:text-base lg:text-lg hover:bg-gray-100 transition-colors shadow-lg">
                 Start as Buyer
               </Link>
-              <Link href="/signup?role=supplier" className="bg-yellow-400 text-gray-900 px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-sm sm:text-base lg:text-lg hover:bg-yellow-300 transition-colors shadow-lg">
+              <Link href="/register?role=supplier" className="bg-yellow-400 text-gray-900 px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-sm sm:text-base lg:text-lg hover:bg-yellow-300 transition-colors shadow-lg">
                 Become a Supplier
               </Link>
             </div>

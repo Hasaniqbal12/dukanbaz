@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FiX, FiPackage, FiDollarSign, FiClock, FiTruck } from 'react-icons/fi';
+import { FiX, FiPackage, FiDollarSign, FiTruck } from 'react-icons/fi';
 
 interface Product {
   _id: string;
@@ -27,7 +27,7 @@ interface BidModalProps {
     unit: string;
   };
   supplierProducts: Product[];
-  onSubmit: (bidData: any) => Promise<void>;
+  onSubmit: (bidData: { requestId: string; productId: string; bidPrice: number; quantity: number; message: string; deliveryTime: number }) => Promise<void>;
 }
 
 export default function BidModal({ 
@@ -45,17 +45,6 @@ export default function BidModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Debug logging
-  console.log('BidModal - supplierProducts:', supplierProducts);
-  console.log('BidModal - supplierProducts length:', supplierProducts.length);
-  console.log('BidModal - request:', request);
-  
-  // Check if products have the expected structure
-  if (supplierProducts.length > 0) {
-    console.log('BidModal - First product structure:', supplierProducts[0]);
-    console.log('BidModal - First product title:', supplierProducts[0].title);
-    console.log('BidModal - First product price:', supplierProducts[0].price);
-  }
   
   // Show all products initially, with relevant ones first
   const relevantProducts = supplierProducts.sort((a, b) => {
@@ -71,8 +60,6 @@ export default function BidModal({
     return 0;
   });
   
-  console.log('BidModal - relevantProducts:', relevantProducts);
-  console.log('BidModal - relevantProducts length:', relevantProducts.length);
 
   const selectedProductData = supplierProducts.find(p => p._id === selectedProduct);
 
@@ -87,7 +74,7 @@ export default function BidModal({
     }
   }, [selectedProduct, selectedProductData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 

@@ -1,3 +1,8 @@
+// DEPRECATED: This file is replaced by Product.ts
+// This file has been commented out to prevent conflicts
+// Use Product.ts for all product model operations
+
+/*
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
@@ -273,4 +278,5 @@ productSchema.pre('save', function(next) {
   next();
 });
 
-export default mongoose.models.Product || mongoose.model('Product', productSchema);
+export default Product;
+*/

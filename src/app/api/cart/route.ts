@@ -3,23 +3,18 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { dbConnect } from '@/lib/mongodb';
 import User from '@/models/User';
-import Cart from '@/models/Cart';
+import Cart, { ICartItem } from '@/models/Cart';
 import Product from '@/models/Product';
 import mongoose from 'mongoose';
 
 // GET /api/cart - Fetch user's cart items
 export async function GET() {
   try {
-    console.log('Cart API: Starting GET request');
-    
     await dbConnect();
-    console.log('Cart API: Database connected');
     
     const session = await getServerSession(authOptions) as any;
-    console.log('Cart API: Session:', session);
     
     if (!session?.user?.id) {
-      console.log('Cart API: No session or user ID found');
       return NextResponse.json({ 
         success: false,
         error: 'Not authenticated' 
@@ -27,7 +22,7 @@ export async function GET() {
     }
 
     // Find or create cart for user using upsert to avoid duplicate key errors
-    let cart = await Cart.findOneAndUpdate(
+    const cart = await Cart.findOneAndUpdate(
       { userId: session.user.id },
       { $setOnInsert: { userId: session.user.id, items: [] } },
       { 
@@ -42,20 +37,16 @@ export async function GET() {
       select: 'title images price stock description slug'
     })
     .populate('items.supplierId', 'name companyName')
-    .lean();
+    .lean() as any;
 
-    console.log('Cart API GET: Looking for cart for user:', session.user.id);
-    console.log('Cart API GET: Found cart:', cart ? 'YES' : 'NO');
-    console.log('Cart API GET: Cart items count:', cart?.items?.length || 0);
-    console.log('Cart API GET: Raw cart items:', JSON.stringify(cart?.items, null, 2));
 
     // Calculate totals
-    const totalItems = cart.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
-    const totalAmount = cart.items.reduce((sum: number, item: any) => sum + (item.unitPrice * item.quantity), 0);
+    const totalItems = cart?.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
+    const totalAmount = cart?.items?.reduce((sum: number, item: any) => sum + (item.unitPrice * item.quantity), 0) || 0;
 
     // Format response
-    const formattedItems = cart.items.map((item: any) => ({
-      id: item._id.toString(),
+    const formattedItems = cart?.items?.map((item: any) => ({
+      id: item._id?.toString() || '',
       type: item.type,
       productId: item.productId?._id || item.productId,
       name: item.productName,
@@ -88,43 +79,32 @@ export async function GET() {
       })
     }));
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       data: {
-        id: cart._id.toString(),
+        id: cart?._id?.toString() || '',
         items: formattedItems,
         totalItems,
         totalAmount,
-        currency: 'PKR',
-        createdAt: cart.createdAt,
-        updatedAt: cart.updatedAt
+        createdAt: cart?.createdAt,
+        updatedAt: cart?.updatedAt
       }
     });
 
   } catch (error) {
-    console.error('Cart fetch error:', error);
-    console.error('Cart API: Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    console.error('Error fetching cart:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ 
       success: false,
-      error: 'Failed to fetch cart data',
-      details: error.message
+      error: 'Failed to fetch cart' 
     }, { status: 500 });
   }
 }
 
 // POST /api/cart - Add item to cart
 export async function POST(req: NextRequest) {
-  console.log('Cart API POST: Starting add to cart request');
-  
   const session = await getServerSession(authOptions) as any;
-  console.log('Cart API POST: Session user ID:', session?.user?.id);
   
   if (!session?.user?.id) {
-    console.log('Cart API POST: No authentication found');
     return NextResponse.json({ 
       success: false,
       error: 'Not authenticated' 
@@ -136,10 +116,8 @@ export async function POST(req: NextRequest) {
 
   try {
     await dbConnect();
-    console.log('Cart API POST: Database connected');
     
     const requestBody = await req.json();
-    console.log('Cart API POST: Request body:', requestBody);
     
     const { 
       type = 'regular', // 'regular' or 'bid'
@@ -163,8 +141,6 @@ export async function POST(req: NextRequest) {
       bidPrice
     } = requestBody;
     
-    console.log('Cart API POST: Parsed data - productId:', productId, 'quantity:', quantity, 'type:', type);
-    console.log('Cart API POST: Testing with product ID 6890d3b6b8fc442a093e4928:', productId === '6890d3b6b8fc442a093e4928');
 
     // Common validation
     if (!productId) {
@@ -187,7 +163,6 @@ export async function POST(req: NextRequest) {
 
     // Get supplier details - handle both ObjectId and populated supplier
     const supplierId = product.supplier?._id || product.supplier?.id || product.supplier;
-    console.log('Cart API POST: Supplier ID extracted:', supplierId);
     const supplier = await User.findById(supplierId).session(dbSession);
     if (!supplier) {
       await dbSession.abortTransaction();
@@ -197,7 +172,7 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
-    let cartItem: any;
+    let cartItem: Partial<ICartItem>;
     
     if (type === 'bid') {
       // Handle bid items
@@ -259,50 +234,36 @@ export async function POST(req: NextRequest) {
     }
 
     // Find or create user's cart
-    console.log('Cart API POST: Looking for cart for user:', session.user.id);
     let cart = await Cart.findOne({ userId: session.user.id }).session(dbSession);
-    console.log('Cart API POST: Found existing cart:', cart ? 'YES' : 'NO');
     
     if (!cart) {
-      console.log('Cart API POST: Creating new cart with item');
       // Create new cart with the item
       cart = new Cart({
         userId: session.user.id,
         items: [cartItem]
       });
-      console.log('Cart API POST: New cart created with items:', cart.items.length);
     } else {
-      console.log('Cart API POST: Existing cart has', cart.items.length, 'items');
       // Add to existing cart or update quantity
       const existingItemIndex = cart.items.findIndex(
-        item => item.productId.toString() === product._id.toString() &&
+        (item: any) => item.productId.toString() === product._id.toString() &&
                item.variantId === variantId &&
                item.color === color &&
                item.size === size &&
                item.material === material &&
                item.style === style
       );
-      console.log('Cart API POST: Existing item index:', existingItemIndex);
       
       if (existingItemIndex >= 0) {
-        console.log('Cart API POST: Updating existing item quantity');
         // Update existing item quantity
         cart.items[existingItemIndex].quantity += quantity;
         cart.items[existingItemIndex].totalPrice = cart.items[existingItemIndex].quantity * cart.items[existingItemIndex].unitPrice;
       } else {
-        console.log('Cart API POST: Adding new item to cart');
         // Add new item
         cart.items.push(cartItem);
       }
-      console.log('Cart API POST: Cart now has', cart.items.length, 'items');
     }
 
-    console.log('Cart API POST: Saving cart to database...');
-    console.log('Cart API POST: Cart before save - items count:', cart.items.length);
     await cart.save({ session: dbSession });
-    console.log('Cart API POST: Cart saved successfully');
-    console.log('Cart API POST: Cart after save - items count:', cart.items.length);
-    console.log('Cart API POST: Final cart items:', JSON.stringify(cart.items, null, 2));
 
     await dbSession.commitTransaction();
     

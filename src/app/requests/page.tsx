@@ -107,8 +107,8 @@ export default function RequestsPage() {
   // Bidding states
   const [showBidModal, setShowBidModal] = useState(false);
   const [showBidManagement, setShowBidManagement] = useState(false);
-  const [supplierProducts, setSupplierProducts] = useState([]);
-  const [bids, setBids] = useState([]);
+  const [supplierProducts] = useState<Product[]>([]);
+  const [bids, setBids] = useState<any[]>([]);
   const [supplierBids, setSupplierBids] = useState<string[]>([]); // Track request IDs supplier has bid on
   const [hideBidOn, setHideBidOn] = useState<boolean>(false);
 
@@ -183,7 +183,7 @@ export default function RequestsPage() {
   }, [currentPage, searchTerm, categoryFilter, urgencyFilter, statusFilter, sortBy, session]);
 
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.user) {
       alert('Please sign in to post a request. You will be redirected to the sign-in page.');
@@ -255,50 +255,10 @@ export default function RequestsPage() {
 
 
 
-  // Fetch supplier products for bidding
-  const fetchSupplierProducts = async () => {
-    try {
-      console.log('Fetching supplier products...');
-      const response = await fetch('/api/products?supplier=me');
-      const data = await response.json();
-      console.log('Supplier products response:', data);
-      if (data.success) {
-        console.log('Setting supplier products:', data.data.products);
-        console.log('Products count:', data.data.products.length);
-        if (data.data.products.length > 0) {
-          console.log('First product:', data.data.products[0]);
-        }
-        setSupplierProducts(data.data.products);
-      } else {
-        console.error('Failed to fetch supplier products:', data);
-      }
-    } catch (error) {
-      console.error('Error fetching supplier products:', error);
-    }
-  };
-
-  // Fetch bids for a request
-  const fetchBids = async (requestId: string) => {
-    try {
-      console.log('Fetching bids for requestId:', requestId);
-      const response = await fetch(`/api/bids?requestId=${requestId}`);
-      console.log('Bids response status:', response.status);
-      const data = await response.json();
-      console.log('Bids response data:', data);
-      if (data.success) {
-        console.log('Setting bids:', data.data.bids);
-        setBids(data.data.bids);
-      } else {
-        console.error('Failed to fetch bids:', data);
-      }
-    } catch (error) {
-      console.error('Error fetching bids:', error);
-    }
-  };
 
   // Fetch supplier's existing bids to track which requests they've already bid on
   const fetchSupplierBids = async () => {
-    if (!session?.user || (session.user as any)?.role !== 'supplier') {
+    if (!session?.user || (session.user as { role?: string })?.role !== 'supplier') {
       return;
     }
     
@@ -330,7 +290,7 @@ export default function RequestsPage() {
   };
 
   // Submit bid
-  const handleBidSubmit = async (bidData: any) => {
+  const handleBidSubmit = async (bidData: { requestId: string; productId: string; bidPrice: number; quantity: number; message: string; deliveryTime: number }) => {
     try {
       const response = await fetch('/api/bids', {
         method: 'POST',

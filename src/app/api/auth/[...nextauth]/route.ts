@@ -1,9 +1,10 @@
-import NextAuth from 'next-auth';
-import type { AuthOptions } from 'next-auth';
+import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import User from '@/models/User';
 import { dbConnect } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
+import { JWT } from 'next-auth/jwt';
+import { Session } from 'next-auth';
 
 const authOptions: AuthOptions = {
   providers: [
@@ -13,7 +14,7 @@ const authOptions: AuthOptions = {
         email: { label: 'Email', type: 'email', placeholder: 'user@example.com' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials: any) {
+      async authorize(credentials: { email?: string; password?: string } | undefined): Promise<{ id: string; name: string; email: string; role: string } | null> {
         try {
           await dbConnect();
           
@@ -66,7 +67,7 @@ const authOptions: AuthOptions = {
     }
   },
   callbacks: {
-    async jwt({ token, user }: { token: any; user: any }) {
+    async jwt({ token, user }: { token: JWT; user?: { id: string; name: string; email: string; role: string } }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -75,7 +76,7 @@ const authOptions: AuthOptions = {
       }
       return token;
     },
-    async session({ session, token }: { session: any; token: any }) {
+    async session({ session, token }: { session: Session; token: JWT & { id?: string; role?: string } }) {
       if (token && session.user) {
         session.user.id = token.id;
         session.user.role = token.role;

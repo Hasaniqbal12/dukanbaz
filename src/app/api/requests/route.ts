@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Build query
-    const query: any = {};
+    const query: Record<string, any> = {};
 
     // Only filter by status if it's not 'all' and not empty
     if (status && status !== 'all') {
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // Execute query with pagination
     const skip = (page - 1) * limit;
-    const sortOptions: any = {};
+    const sortOptions: Record<string, 1 | -1> = {};
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
     console.log('API - Query:', query);
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching requests:', error);
+    console.error('Requests API GET error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch requests' },
       { status: 500 }
@@ -93,12 +93,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new request (buyers only)
 export async function POST(request: NextRequest) {
-  console.log('POST /api/requests called');
   try {
-    console.log('Getting session...');
-    const session = await getServerSession(authOptions);
-    console.log('Session:', session);
-    
+    await dbConnect();
+    const session = await getServerSession(authOptions); 
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -178,7 +175,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function calculatePriority(requestData: any): 'low' | 'medium' | 'high' | 'urgent' {
+function calculatePriority(requestData: { maxBudget?: number; quantity?: number; urgency?: string }): 'low' | 'medium' | 'high' | 'urgent' {
   let score = 0;
   
   // Budget factor
