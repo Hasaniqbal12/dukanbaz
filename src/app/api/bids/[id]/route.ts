@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import mongoose from 'mongoose';
-import { dbConnect } from '@/lib/mongodb';
-import Bid from '@/models/Bid';
-import Request from '@/models/Request';
-import Cart, { IBidCartItem } from '@/models/Cart';
-import User from '@/models/User';
-import Product from '@/models/Product';
+import { dbConnect } from '../../../../lib/mongodb';
+import Bid from '../../../../models/Bid';
+import Request from '../../../../models/Request';
+import Cart, { IBidCartItem } from '../../../../models/Cart';
+import User from '../../../../models/User';
+import Product from '../../../../models/Product';
 
 // GET /api/bids/[id] - Get a specific bid
 export async function GET(
