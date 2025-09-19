@@ -10,15 +10,12 @@ export interface INotification extends Document {
   priority: 'low' | 'medium' | 'high' | 'urgent';
   isRead: boolean;
   readAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 const NotificationSchema = new Schema<INotification>({
   userId: { 
     type: String, 
-    required: true,
-    index: true
+    required: true
   },
   type: { 
     type: String, 

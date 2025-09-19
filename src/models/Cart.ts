@@ -101,8 +101,7 @@ const CartSchema = new Schema<ICart>(
   { timestamps: true }
 );
 
-// Create index for faster lookups
-CartSchema.index({ userId: 1 });
+// Index already created by unique: true on userId field
 
 const Cart = mongoose.models.Cart || mongoose.model<ICart>('Cart', CartSchema);
 

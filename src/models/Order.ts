@@ -142,7 +142,6 @@ OrderSchema.index({ supplierId: 1 });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ paymentStatus: 1 });
 OrderSchema.index({ createdAt: -1 });
-OrderSchema.index({ orderNumber: 1 });
 OrderSchema.index({ isDropshipping: 1 });
 
 // Add method to generate order number

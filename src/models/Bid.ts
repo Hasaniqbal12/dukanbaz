@@ -78,7 +78,6 @@ const BidSchema = new Schema<IBid>({
 });
 
 // Compound indexes for efficient queries
-BidSchema.index({ request: 1, supplier: 1 });
 BidSchema.index({ request: 1, status: 1 });
 BidSchema.index({ supplier: 1, status: 1 });
 

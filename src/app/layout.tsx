@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+export const generateViewport = () => 'width=device-width, initial-scale=1';
 
 export const metadata: Metadata = {
   title: "DukanBaz - Pakistan B2B Wholesale Marketplace",
   description: "Pakistan's leading B2B wholesale marketplace. Connect with verified suppliers and buyers across Pakistan. Find quality products at wholesale prices.",
   keywords: ["wholesale", "B2B", "Pakistan", "suppliers", "buyers", "bulk trading", "business marketplace"],
   authors: [{ name: "DukanBaz" }],
-  viewport: "width=device-width, initial-scale=1",
   robots: "index, follow",
 };
 

@@ -34,7 +34,7 @@ import {
   FiStar,
   FiShield
 } from "react-icons/fi";
-import SupplierMembershipUpgrade from "../../components/SupplierMembershipUpgrade";
+import SupplierMembershipUpgrade from '../../components/SupplierMembershipUpgrade';
 
 interface SupplierStats {
   overview: {
