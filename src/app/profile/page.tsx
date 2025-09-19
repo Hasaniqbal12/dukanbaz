@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useSession } from 'next-auth/react';
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import PageLayout from "@/components/PageLayout";
-import ProfileEditModal from "@/components/ProfileEditModal";
+import PageLayout from "../../components/PageLayout";
+import ProfileEditModal from "../../components/ProfileEditModal";
 import {
   FiEdit2,
   FiShare2,

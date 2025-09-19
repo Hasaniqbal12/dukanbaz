@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import PageLayout from "@/components/PageLayout";
 import {
   FiEdit2,
   FiShare2,

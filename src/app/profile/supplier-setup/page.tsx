@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Head from "next/head";
 import Link from "next/link";
-import ImageUpload from "@/components/ImageUpload";
+import ImageUpload from "../../../components/ImageUpload";
 import { 
   FiSave, 
   FiArrowLeft, 

@@ -3,10 +3,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useCart } from '@/contexts/CartContext';
-import { useToast } from '@/components/Toast';
-import PageLayout from "@/components/PageLayout";
-import DropshippingOption from '@/components/product/DropshippingOption';
+import { useCart } from '../../../contexts/CartContext';
+import { useToast } from '../../../components/Toast';
+import PageLayout from '../../../components/PageLayout';
+import DropshippingOption from '../../../components/product/DropshippingOption';
 
 import { 
   FiHeart, 

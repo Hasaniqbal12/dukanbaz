@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useCart } from '@/contexts/CartContext';
-import PageLayout from "@/components/PageLayout";
+import { useCart } from '../../contexts/CartContext';
+import PageLayout from '../../components/PageLayout';
 import { 
   FiMinus, 
   FiPlus, 

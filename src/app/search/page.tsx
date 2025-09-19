@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import PageLayout from "@/components/PageLayout";
+import PageLayout from "../../components/PageLayout";
 import { 
   FiSearch, 
   FiFilter, 

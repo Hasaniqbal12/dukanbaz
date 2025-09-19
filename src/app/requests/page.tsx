@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from 'next-auth/react';
-import PageLayout from '@/components/PageLayout';
-import BidModal from '@/components/BidModal';
-import BidManagement from '@/components/BidManagement';
-import ImageUpload from '@/components/ImageUpload';
+import PageLayout from '../../components/PageLayout';
+import BidModal from '../../components/BidModal';
+import BidManagement from '../../components/BidManagement';
+import ImageUpload from '../../components/ImageUpload';
 import { 
   FiSearch, FiEye, FiDollarSign, FiCalendar, FiMapPin, FiTag, FiTrendingUp, FiPlus, FiSettings, FiX,
   FiCheckCircle, FiAlertCircle, FiBarChart, FiPackage, FiShoppingCart, FiSend

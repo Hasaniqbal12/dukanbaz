@@ -4,7 +4,7 @@ import Head from "next/head";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "../../contexts/CartContext";
 import { 
   FiUser, 
   FiPhone, 
