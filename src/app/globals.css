@@ -1,10 +1,6 @@
 @import "tailwindcss";
 
-
 /* Tailwind v4 theme variables mapped to CSS custom properties */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @theme {
   /* Colors */
