@@ -4,7 +4,7 @@ import "./globals.css";
 import MobileBottomNav from "../components/MobileBottomNav";
 import SessionClientProvider from "../components/SessionClientProvider";
 import SessionDebug from "../components/SessionDebug";
-import { CartProvider } from "@/contexts/CartContext";
+import { CartProvider } from "../contexts/CartContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

@@ -3,12 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import Header from '@/components/Header';
-import ImageUpload from '@/components/ImageUpload';
+import Header from '../../components/Header';
+import ImageUpload from '../../components/ImageUpload';
 import { 
-  FiUpload, 
-  FiX, 
-  FiTools,
   FiPlus, 
   FiMinus, 
   FiTag, 
