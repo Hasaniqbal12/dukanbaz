@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/mongodb';
-import Product from '@/models/Product';
+import { dbConnect } from '../../../../lib/mongodb';
+import Product from '../../../../models/Product';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '../../../../app/api/auth/[...nextauth]/route';
 
 // GET - Fetch supplier's own products
 export async function GET(request: NextRequest) {

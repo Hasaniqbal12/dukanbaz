@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/mongodb';
-import Product, { IProduct } from '@/models/Product';
+import { dbConnect } from '../../../../../lib/mongodb';
+import Product, { IProduct } from '../../../../../models/Product';
 
 // GET: fetch reviews and summary for a product
 export async function GET(
