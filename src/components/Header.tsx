@@ -4,12 +4,12 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCart } from '@/contexts/CartContext';
-import CartHoverDropdown from '@/components/cart/CartHoverDropdown';
-import MessagesHoverDropdown from '@/components/header/MessagesHoverDropdown';
-import OrdersHoverDropdown from '@/components/header/OrdersHoverDropdown';
-import ProfileHoverDropdown from '@/components/header/ProfileHoverDropdown';
-import MegaMenuDropdown from '@/components/header/MegaMenuDropdown';
+import { useCart } from '../contexts/CartContext';
+import CartHoverDropdown from '../components/cart/CartHoverDropdown';
+import MessagesHoverDropdown from '../components/header/MessagesHoverDropdown';
+import OrdersHoverDropdown from '../components/header/OrdersHoverDropdown';
+import ProfileHoverDropdown from '../components/header/ProfileHoverDropdown';
+import MegaMenuDropdown from '../components/header/MegaMenuDropdown';
 import {
   FiSearch,
   FiShoppingCart,
