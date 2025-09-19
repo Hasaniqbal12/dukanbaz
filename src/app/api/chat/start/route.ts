@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import { dbConnect } from '@/lib/mongodb';
-import User from '@/models/User';
-import Conversation from '@/models/Conversation';
+import { dbConnect } from '../../../../lib/mongodb';
+import User from '../../../../models/User';
+import Conversation from '../../../../models/Conversation';
 
 export async function POST(request: NextRequest) {
   try {
