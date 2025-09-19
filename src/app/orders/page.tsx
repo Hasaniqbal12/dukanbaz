@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import PageLayout from '../../components/PageLayout';
 import Header from '../../components/Header';
 import {
   FiPackage,

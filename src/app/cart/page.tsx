@@ -29,7 +29,6 @@ import {
 } from 'react-icons/fi';
 
 // Use the proper ICartItem interface from models
-import { ICartItem } from '@/models/Cart';
 
 interface CartItemForDisplay {
   _id: string;
