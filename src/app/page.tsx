@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import { FiStar, FiSearch, FiShield, FiTruck, FiGlobe, FiArrowRight, FiUsers, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import PageLayout from '@/components/PageLayout';
+import PageLayout from 'src/components/PageLayout';
 
 interface Product {
   id: number;
