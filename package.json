@@ -17,7 +17,8 @@
     "mongoose": "^8.16.4",
     "multer": "^2.0.2",
     "next": "15.4.0",
-    "next-auth": "^4.24.12",
+        "next-auth": "^4.24.10",
+
     "next-cloudinary": "^6.17.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
