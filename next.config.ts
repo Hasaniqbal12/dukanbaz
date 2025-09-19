@@ -36,7 +36,6 @@ const nextConfig: NextConfig = {
     ],
     unoptimized: true,
   },
-  output: 'standalone', // ✅ required for Amplify SSR + NextAuth
   trailingSlash: true,
   typescript: {
     ignoreBuildErrors: true,
