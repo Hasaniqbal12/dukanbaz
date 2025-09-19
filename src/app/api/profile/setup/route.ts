@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { dbConnect } from "@/lib/mongodb";
-import User from "@/models/User";
+import { dbConnect } from "../../../../lib/mongodb";
+import User from "../../../../models/User";
 
 // POST /api/profile/setup - Complete profile setup
 export async function POST(request: NextRequest) {

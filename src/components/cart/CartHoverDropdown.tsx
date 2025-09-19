@@ -3,8 +3,8 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { FiShoppingCart, FiPackage, FiMinus, FiPlus, FiTrash2, FiArrowRight } from 'react-icons/fi';
-import { useCart } from '@/contexts/CartContext';
-import { ICartItem } from '@/models/Cart';
+import { useCart } from '../../contexts/CartContext';
+import { ICartItem } from '../../models/Cart';
 
 
 interface CartHoverDropdownProps {

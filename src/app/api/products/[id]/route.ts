@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/mongodb';
-import Product from '@/models/Product';
-import User from '@/models/User';
+import { dbConnect } from '../../../../lib/mongodb';
+import Product from '../../../../models/Product';
+import User from '../../../../models/User';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '../../auth/[...nextauth]/route';
 
 // GET - Fetch single product by ID
 export async function GET(

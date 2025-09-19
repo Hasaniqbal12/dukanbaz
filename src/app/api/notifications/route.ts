@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/mongodb';
-import Notification from '@/models/Notification';
+import { dbConnect } from '../../../lib/mongodb';
+import Notification from '../../../models/Notification';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/route';
 import type { Session } from 'next-auth';
 
 // GET - Fetch user's notifications

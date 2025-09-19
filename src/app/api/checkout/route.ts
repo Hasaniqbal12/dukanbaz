@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
-import Order from '@/models/Order';
-import Cart from '@/models/Cart';
-import User from '@/models/User';
-import { connectDB } from '@/lib/mongodb';
-import { sendNotification } from '@/lib/notificationService';
+import Order from '../../../models/Order';
+import Cart from '../../../models/Cart';
+import User from '../../../models/User';
+import { sendNotification } from '../../../lib/notificationService';
 
 export async function POST(req: NextRequest) {
   try {

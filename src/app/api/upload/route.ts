@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
-import { uploadProductImage, uploadProfileImage, deleteImageFromS3 } from "@/lib/s3";
+import { uploadProductImage, uploadProfileImage, deleteImageFromS3 } from "../../../lib/s3";
 
 // Validate image file
 function validateImageFile(file: File) {

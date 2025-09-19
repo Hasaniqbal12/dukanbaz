@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/mongodb';
-import Offer from '@/models/Offer';
-import Notification from '@/models/Notification';
+import { dbConnect } from '../../../../lib/mongodb';
+import Offer from '../../../../models/Offer';
+import Notification from '../../../../models/Notification';
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   await dbConnect();

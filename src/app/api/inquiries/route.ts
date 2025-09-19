@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/mongodb';
-import Inquiry from '@/models/Inquiry';
-import Product from '@/models/Product';
+import { dbConnect } from '../../../lib/mongodb';
+import Inquiry from '../../../models/Inquiry';
+import Product from '../../../models/Product';
 
 export async function POST(req: NextRequest) {
   try {

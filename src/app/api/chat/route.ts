@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
-import { dbConnect } from '@/lib/mongodb';
-import Message from '@/models/Message';
-import Conversation from '@/models/Conversation';
+import { dbConnect } from '../../../lib/mongodb';
+import Message from '../../../models/Message';
+import Conversation from '../../../models/Conversation';
 
 export async function GET(request: NextRequest) {
   try {

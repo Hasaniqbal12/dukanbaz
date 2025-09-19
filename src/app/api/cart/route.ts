@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
-import { dbConnect } from '@/lib/mongodb';
-import User from '@/models/User';
-import Cart, { ICartItem } from '@/models/Cart';
-import Product from '@/models/Product';
+import { dbConnect } from '../../../lib/mongodb';
+import User from '../../../models/User';
+import Cart, { ICartItem } from '../../../models/Cart';
+import Product from '../../../models/Product';
 import mongoose from 'mongoose';
 
 // GET /api/cart - Fetch user's cart items

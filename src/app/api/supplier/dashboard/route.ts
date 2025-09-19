@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/mongodb';
-import Product from '@/models/Product';
-import Order from '@/models/Order';
-import Request from '@/models/Request';
-import Offer from '@/models/Offer';
-import User from '@/models/User';
+import { dbConnect } from '../../../lib/mongodb';
+import Product from '../../../models/Product';
+import Order from '../../../models/Order';
+import Request from '../../../models/Request';
+import Offer from '../../../models/Offer';
+import User from '../../../models/User';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/route';
 import type { Session } from 'next-auth';
 
 export async function GET(request: NextRequest) {

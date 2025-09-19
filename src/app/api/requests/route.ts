@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/mongodb';
-import Request from '@/models/Request';
+import { dbConnect } from '../../../lib/mongodb';
+import Request from '../../../models/Request';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 // GET - Fetch requests with filtering and pagination
 export async function GET(request: NextRequest) {

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import { dbConnect } from '@/lib/mongodb';
-import User from '@/models/User';
+import { dbConnect } from '../../../../lib/mongodb';
+import User from '../../../../models/User';
 
 // GET - Fetch user's saved address
 export async function GET() {

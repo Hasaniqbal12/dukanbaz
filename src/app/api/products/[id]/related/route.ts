@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/mongodb';
-import Product from '@/models/Product';
+import { dbConnect } from '../../../../../lib/mongodb';
+import Product from '../../../../../models/Product';
 
 type LeanProductHead = { category?: string; subcategory?: string; tags?: string[] };
 type LeanRelatedItem = {

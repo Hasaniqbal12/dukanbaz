@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { dbConnect } from '@/lib/mongodb';
-import Bid from '@/models/Bid';
-import Request from '@/models/Request';
-import Product from '@/models/Product';
-import User from '@/models/User';
+import { dbConnect } from '../../../lib/mongodb';
+import Bid from '../../../models/Bid';
+import Request from '../../../models/Request';
+import Product from '../../../models/Product';
+import User from '../../../models/User';
 
 // GET /api/bids - Get bids (for buyer to see bids on their requests, or supplier to see their bids)
 export async function GET(request: NextRequest) {
