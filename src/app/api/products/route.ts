@@ -5,14 +5,51 @@ import User from '../../../models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
 
+// TypeScript interfaces for product variations
+interface ProductOptionValue {
+  name: string;
+  value: string;
+  image?: string;
+  color?: string;
+  priceModifier?: number;
+}
+
+interface ProductOption {
+  name: string;
+  type: string;
+  values: ProductOptionValue[];
+}
+
+interface VariationAttribute {
+  name: string;
+  value: string;
+}
+
+interface VariationCombination {
+  _id: string;
+  attributes: VariationAttribute[];
+  priceTiers: Array<{
+    minQty: number;
+    maxQty?: number;
+    price: number;
+    currency: string;
+  }>;
+  stock: number;
+  moq: number;
+  sku: string;
+  leadTime: string;
+  images: string[];
+  available: boolean;
+}
+
 // Helper function to process product variations
-function processProductVariations(options: any[], basePrice: number) {
+function processProductVariations(options: ProductOption[], basePrice: number) {
   if (!options || options.length === 0) return null;
 
   // Convert frontend options to backend attributes
   const attributes = options.map(option => ({
     name: option.name,
-    values: option.values.map((value: any) => ({
+    values: option.values.map((value: ProductOptionValue) => ({
       name: value.name,
       image: value.image || undefined,
       hexCode: option.type === 'color' ? value.color : undefined
@@ -30,18 +67,25 @@ function processProductVariations(options: any[], basePrice: number) {
 }
 
 // Helper function to generate all combinations
-function generateCombinations(options: any[], basePrice: number) {
+function generateCombinations(options: ProductOption[], basePrice: number): VariationCombination[] {
   if (options.length === 0) return [];
 
+  type OptionValueItem = {
+    optionName: string;
+    valueName: string;
+    valueId: string;
+    priceModifier: number;
+  };
+
   // Generate cartesian product of all option values
-  const cartesianProduct = (arrays: any[][]): any[][] => {
+  const cartesianProduct = (arrays: OptionValueItem[][]): OptionValueItem[][] => {
     return arrays.reduce((acc, curr) => 
       acc.flatMap(x => curr.map(y => [...x, y]))
-    , [[]]);
+    , [[]] as OptionValueItem[][]);
   };
 
   const optionValues = options.map(option => 
-    option.values.map((value: any) => ({
+    option.values.map((value: ProductOptionValue) => ({
       optionName: option.name,
       valueName: value.name,
       valueId: value.value,
@@ -52,12 +96,12 @@ function generateCombinations(options: any[], basePrice: number) {
   const allCombinations = cartesianProduct(optionValues);
 
   return allCombinations.map((combination, index) => {
-    const totalPriceModifier = combination.reduce((sum: number, item: any) => sum + item.priceModifier, 0);
+    const totalPriceModifier = combination.reduce((sum: number, item) => sum + item.priceModifier, 0);
     const finalPrice = basePrice + totalPriceModifier;
 
     return {
       _id: `combo_${index}`,
-      attributes: combination.map((item: any) => ({
+      attributes: combination.map((item) => ({
         name: item.optionName,
         value: item.valueName
       })),
@@ -77,10 +121,30 @@ function generateCombinations(options: any[], basePrice: number) {
   });
 }
 
+interface ProductDocument {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  images: string[];
+  supplier: {
+    id: string;
+    name: string;
+    verified: boolean;
+  };
+  status: string;
+  featured?: boolean;
+  tags?: string[];
+  variations?: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 interface ProductsResponse {
   success: boolean;
   data: {
-    products: any[];
+    products: ProductDocument[];
     pagination: {
       currentPage: number;
       totalPages: number;

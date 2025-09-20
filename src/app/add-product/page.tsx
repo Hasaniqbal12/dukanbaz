@@ -312,11 +312,19 @@ export default function AddProductPage() {
       return;
     }
 
+    // Define types for option values
+    type OptionValueItem = {
+      optionName: string;
+      valueName: string;
+      valueId: string;
+      priceModifier: number;
+    };
+
     // Generate cartesian product
-    const cartesianProduct = (arrays: any[][]): any[][] => {
+    const cartesianProduct = (arrays: OptionValueItem[][]): OptionValueItem[][] => {
       return arrays.reduce((acc, curr) => 
         acc.flatMap(x => curr.map(y => [...x, y]))
-      , [[]]);
+      , [[]] as OptionValueItem[][]);
     };
 
     const optionValues = validOptions.map(option => 
@@ -331,12 +339,12 @@ export default function AddProductPage() {
     const allCombinations = cartesianProduct(optionValues);
 
     const combinations: VariationCombination[] = allCombinations.map((combination, index) => {
-      const totalPriceModifier = combination.reduce((sum: number, item: any) => sum + item.priceModifier, 0);
+      const totalPriceModifier = combination.reduce((sum: number, item) => sum + item.priceModifier, 0);
       const finalPrice = formData.price + totalPriceModifier;
 
       return {
         id: `combo_${index}`,
-        attributes: combination.map((item: any) => ({
+        attributes: combination.map((item) => ({
           name: item.optionName,
           value: item.valueName
         })),

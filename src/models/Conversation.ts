@@ -93,7 +93,7 @@ ConversationSchema.methods.addParticipant = function(userId: mongoose.Types.Obje
 // Method to get unread count for a user
 ConversationSchema.methods.getUnreadCount = function(userId: mongoose.Types.ObjectId) {
   const participant = this.participantDetails.find(
-    (p: any) => p.userId.toString() === userId.toString()
+    (p: { userId: mongoose.Types.ObjectId; unreadCount: number }) => p.userId.toString() === userId.toString()
   );
   return participant ? participant.unreadCount : 0;
 };
@@ -101,7 +101,7 @@ ConversationSchema.methods.getUnreadCount = function(userId: mongoose.Types.Obje
 // Method to mark as read for a user
 ConversationSchema.methods.markAsRead = function(userId: mongoose.Types.ObjectId) {
   const participant = this.participantDetails.find(
-    (p: any) => p.userId.toString() === userId.toString()
+    (p: { userId: mongoose.Types.ObjectId; unreadCount: number; lastReadAt: Date }) => p.userId.toString() === userId.toString()
   );
   if (participant) {
     participant.unreadCount = 0;

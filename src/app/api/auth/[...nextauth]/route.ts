@@ -95,6 +95,9 @@ const authOptions: AuthOptions = {
   useSecureCookies: process.env.NODE_ENV === 'production',
 };
 
-const handler = NextAuth(authOptions) as any;
+const handler = NextAuth(authOptions) as {
+  GET: (req: Request) => Promise<Response>;
+  POST: (req: Request) => Promise<Response>;
+};
 export { handler as GET, handler as POST };
 export { authOptions }; 

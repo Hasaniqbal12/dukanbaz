@@ -48,7 +48,7 @@ export async function addToCart(params: AddToCartParams, session: mongoose.Clien
     throw new Error('Supplier not found');
   }
 
-  let cartItem: any;
+  let cartItem: ICartItem;
   
   if (type === 'bid') {
     // Validate required bid fields
@@ -143,7 +143,7 @@ export async function updateCartItemQuantity(
   }
 
   // Get the item to check min/max quantities
-  const item = cart.items.find((i: any) => i._id.toString() === itemId.toString());
+  const item = cart.items.find((i) => (i as any)._id.toString() === itemId.toString());
   if (!item) {
     throw new Error('Item not found in cart');
   }

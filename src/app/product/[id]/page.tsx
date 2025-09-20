@@ -321,19 +321,31 @@ export default function ProductDetailPage() {
 
       // Get the tier price for quantity 1 (minimum tier)
       const tierPrice = pricingTiers[0]?.price || product.price;
+      const currentTierPrice = pricingTiers[modalState.selectedTier]?.price || tierPrice;
       
-      await addToCart({
-        type: 'regular',
-        productId: product._id,
-        quantity: 1,
-        tierPrice: tierPrice,
-        variantId: variantId || undefined,
-        variantName: variantName || undefined,
-        color: selectedColor || undefined,
-        size: selectedSize || undefined,
-        variationAttributes: variationAttributes.length > 0 ? variationAttributes : undefined,
-        isBulkOrder: false
-      } as any);
+      if (selectedColor) {
+        await addToCart({
+          type: 'regular',
+          productId: product._id as any,
+          productName: product.title,
+          productImage: product.images?.[0],
+          quantity: quantity,
+          unitPrice: currentTierPrice,
+          totalPrice: currentTierPrice * quantity,
+          supplierId: product.supplier._id as any,
+          supplierName: product.supplier.name || product.supplier.companyName || 'Unknown Supplier',
+          addedAt: new Date(),
+          isBulkOrder: quantity >= (product.moq || 1),
+          minOrderQuantity: product.moq,
+          maxOrderQuantity: (product as any).maxOrderQuantity,
+          bulkDiscount: (product as any).bulkDiscount,
+          variantId: variantId || undefined,
+          variantName: variantName || undefined,
+          color: selectedColor || undefined,
+          size: selectedSize || undefined,
+          variationAttributes: variationAttributes.length > 0 ? variationAttributes : undefined
+        });
+      }
       
       showToast('Product added to cart successfully!', 'success');
     } catch (error) {

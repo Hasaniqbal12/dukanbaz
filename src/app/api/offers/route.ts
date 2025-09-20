@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Build query - temporarily show all offers for testing
-    const query: Record<string, any> = {};
+    const query: Record<string, unknown> = {};
     
     // Temporarily disabled role-based filtering for testing
     // if (session.user.role === 'buyer') {
@@ -193,31 +193,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function calculateCompetitivenessScore(
-  offerPrice: number,
-  targetPrice: number,
-  deliveryTime: string
-): number {
-  let score = 50; // Base score
-  
-  // Price competitiveness (40% weight)
-  const priceRatio = offerPrice / targetPrice;
-  if (priceRatio <= 0.8) score += 40; // 20% below target
-  else if (priceRatio <= 0.9) score += 35; // 10% below target
-  else if (priceRatio <= 1.0) score += 30; // At target
-  else if (priceRatio <= 1.1) score += 20; // 10% above target
-  else if (priceRatio <= 1.2) score += 10; // 20% above target
-  else score -= 10; // More than 20% above target
-  
-  // Delivery time (10% weight)
-  const deliveryDays = parseInt(deliveryTime.match(/\d+/)?.[0] || '30');
-  if (deliveryDays <= 7) score += 10;
-  else if (deliveryDays <= 14) score += 8;
-  else if (deliveryDays <= 30) score += 5;
-  else score += 0;
-  
-  return Math.min(100, Math.max(0, score));
-} 
+ 
  
  
  

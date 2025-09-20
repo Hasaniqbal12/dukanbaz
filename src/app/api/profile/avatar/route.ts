@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     // For now, we'll accept base64 data URLs or external URLs
     // In production, you'd want to validate file type, size, and upload to cloud storage
-    let avatarUrl = avatar;
+    const avatarUrl = avatar;
 
     // Basic validation for data URLs or HTTP URLs
     if (!avatar.startsWith('data:image/') && !avatar.startsWith('http')) {
