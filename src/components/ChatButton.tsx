@@ -45,7 +45,7 @@ export default function ChatButton({
     }
 
     // Don't allow starting conversation with yourself
-    const currentUserId = (session?.user as any)?.id;
+    const currentUserId = (session?.user as { id?: string })?.id;
     if (currentUserId === receiverId) {
       alert("You cannot start a conversation with yourself");
       return;

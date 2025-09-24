@@ -1,18 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
+import { Session } from 'next-auth';
 import { dbConnect } from '../../../lib/mongodb';
 import User from '../../../models/User';
 import Cart, { ICartItem } from '../../../models/Cart';
 import Product from '../../../models/Product';
 import mongoose from 'mongoose';
 
+// Type definitions for cart operations
+interface PopulatedCartItem {
+  _id?: string;
+  type: 'regular' | 'bid';
+  productId: {
+    _id: string;
+    title: string;
+    images: string[];
+    price: number;
+    stock: number;
+    description: string;
+    slug: string;
+  } | string;
+  productName: string;
+  productImage?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  supplierId: {
+    _id: string;
+    name: string;
+    companyName?: string;
+  } | string;
+  supplierName: string;
+  addedAt: Date;
+  isBulkOrder: boolean;
+  minOrderQuantity?: number;
+  maxOrderQuantity?: number;
+  // Regular product fields
+  variantId?: string;
+  variantName?: string;
+  color?: string;
+  size?: string;
+  material?: string;
+  style?: string;
+  variationAttributes?: Array<{ name: string; value: string }>;
+  // Bid-specific fields
+  requestId?: mongoose.Types.ObjectId;
+  originalPrice?: number;
+  discountPercent?: number;
+}
+
+interface PopulatedCart {
+  _id?: string;
+  userId: string;
+  items: PopulatedCartItem[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // GET /api/cart - Fetch user's cart items
 export async function GET() {
   try {
     await dbConnect();
     
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions) as Session | null;
     
     if (!session?.user?.id) {
       return NextResponse.json({ 
@@ -37,15 +88,15 @@ export async function GET() {
       select: 'title images price stock description slug'
     })
     .populate('items.supplierId', 'name companyName')
-    .lean() as any;
+    .lean() as PopulatedCart | null;
 
 
     // Calculate totals
-    const totalItems = cart?.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
-    const totalAmount = cart?.items?.reduce((sum: number, item: any) => sum + (item.unitPrice * item.quantity), 0) || 0;
+    const totalItems = cart?.items?.reduce((sum: number, item: PopulatedCartItem) => sum + item.quantity, 0) || 0;
+    const totalAmount = cart?.items?.reduce((sum: number, item: PopulatedCartItem) => sum + (item.unitPrice * item.quantity), 0) || 0;
 
     // Format response
-    const formattedItems = cart?.items?.map((item: any) => ({
+    const formattedItems = cart?.items?.map((item: PopulatedCartItem) => ({
       id: item._id?.toString() || '',
       type: item.type,
       productId: item.productId?._id || item.productId,
@@ -102,7 +153,7 @@ export async function GET() {
 
 // POST /api/cart - Add item to cart
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions) as any;
+  const session = await getServerSession(authOptions) as Session | null;
   
   if (!session?.user?.id) {
     return NextResponse.json({ 
@@ -245,7 +296,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Add to existing cart or update quantity
       const existingItemIndex = cart.items.findIndex(
-        (item: any) => item.productId.toString() === product._id.toString() &&
+        (item: ICartItem) => item.productId.toString() === product._id.toString() &&
                item.variantId === variantId &&
                item.color === color &&
                item.size === size &&
@@ -290,7 +341,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/cart - Update cart item quantity
 export async function PATCH(req: NextRequest) {
-  const session = await getServerSession(authOptions) as any;
+  const session = await getServerSession(authOptions) as Session | null;
   
   if (!session?.user?.id) {
     return NextResponse.json({ 
@@ -330,7 +381,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Get the item to check min/max quantities
-    const item = cart.items.find((i: any) => i._id.toString() === itemId);
+    const item = cart.items.find((i: ICartItem) => i._id?.toString() === itemId);
     if (!item) {
       await dbSession.abortTransaction();
       return NextResponse.json({ 
@@ -399,7 +450,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/cart - Remove item from cart
 export async function DELETE(req: NextRequest) {
-  const session = await getServerSession(authOptions) as any;
+  const session = await getServerSession(authOptions) as Session | null;
   
   if (!session?.user?.id) {
     return NextResponse.json({ 

@@ -1,20 +1,23 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface INotification extends Document {
-  userId: string;
+  userId: mongoose.Types.ObjectId;
   type: 'order' | 'message' | 'product' | 'offer' | 'request' | 'system' | 'payment' | 'review';
   title: string;
   message: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   actionUrl?: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   isRead: boolean;
   readAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const NotificationSchema = new Schema<INotification>({
   userId: { 
-    type: String, 
+    type: Schema.Types.ObjectId, 
+    ref: 'User',
     required: true
   },
   type: { 
@@ -65,7 +68,7 @@ NotificationSchema.index({ userId: 1, type: 1 });
 NotificationSchema.index({ userId: 1, priority: 1 });
 
 // Virtual for formatted creation date
-NotificationSchema.virtual('timeAgo').get(function() {
+NotificationSchema.virtual('timeAgo').get(function(this: INotification & { createdAt: Date }) {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - this.createdAt.getTime()) / 1000);
   
@@ -93,12 +96,12 @@ NotificationSchema.methods.markAsRead = function() {
 };
 
 // Static method to get unread count for user
-NotificationSchema.statics.getUnreadCount = function(userId: string) {
+NotificationSchema.statics.getUnreadCount = function(userId: mongoose.Types.ObjectId) {
   return this.countDocuments({ userId, isRead: false });
 };
 
 // Static method to mark all as read for user
-NotificationSchema.statics.markAllAsRead = function(userId: string) {
+NotificationSchema.statics.markAllAsRead = function(userId: mongoose.Types.ObjectId) {
   return this.updateMany(
     { userId, isRead: false },
     { isRead: true, readAt: new Date() }

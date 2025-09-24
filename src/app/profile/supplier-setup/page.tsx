@@ -20,12 +20,13 @@ export default function SupplierSetupPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // API Functions
-  const saveStepData = async (stepNumber: number, data: any) => {
+  const saveStepData = async (stepNumber: number, data: unknown) => {
     try {
       setSaving(true);
-      setValidationErrors({});
+      setErrors({});
       
       const response = await fetch('/api/profile/setup', {
         method: 'POST',
@@ -46,8 +47,8 @@ export default function SupplierSetupPage() {
       }
 
       return result;
-    } catch (error) {
-      console.error('Save error:', error);
+    } catch (error: unknown) {
+      console.error('Save error:', error instanceof Error ? error.message : 'Unknown error');
       setErrors({ general: error instanceof Error ? error.message : 'Failed to save data' });
       throw error;
     } finally {
@@ -99,7 +100,6 @@ export default function SupplierSetupPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
   const [coverImageUrl, setCoverImageUrl] = useState<string>('');
-  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 

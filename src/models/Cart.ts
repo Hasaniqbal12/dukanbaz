@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICartItemBase {
+  _id?: mongoose.Types.ObjectId;
   productId: mongoose.Types.ObjectId;
   productName: string;
   productImage?: string;

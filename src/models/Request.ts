@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IRequest extends Document {
   requestNumber: string;
-  buyerId: string;
+  buyerId: mongoose.Types.ObjectId;
   buyerName: string;
   buyerEmail: string;
   productName: string;
@@ -25,7 +25,7 @@ export interface IRequest extends Document {
   offerCount: number;
   bidCount: number;
   viewCount: number;
-  acceptedBid?: string; // Bid ID that was accepted
+  acceptedBid?: mongoose.Types.ObjectId; // Bid ID that was accepted
   acceptedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -33,7 +33,7 @@ export interface IRequest extends Document {
 
 const RequestSchema = new Schema<IRequest>({
   requestNumber: { type: String, required: true, unique: true },
-  buyerId: { type: String, required: true },
+  buyerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   buyerName: { type: String, required: true },
   buyerEmail: { type: String, required: true },
   productName: { type: String, required: true },

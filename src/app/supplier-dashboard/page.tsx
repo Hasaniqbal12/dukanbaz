@@ -249,7 +249,7 @@ export default function SupplierDashboard() {
     );
   }
 
-  if (!session || (session as any)?.user?.role !== 'supplier') {
+  if (!session || (session as { user?: { role?: string } })?.user?.role !== 'supplier') {
     return null;
   }
 

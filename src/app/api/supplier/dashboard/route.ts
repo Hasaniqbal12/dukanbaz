@@ -8,6 +8,63 @@ import User from '../../../../models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import type { Session } from 'next-auth';
+import mongoose from 'mongoose';
+
+// Type definitions for dashboard data
+interface OrderStatusItem {
+  _id: string;
+  count: number;
+}
+
+interface ProductCategoryItem {
+  _id: string;
+  count: number;
+}
+
+interface RevenueAggregation {
+  _id: null;
+  total: number;
+}
+
+interface OrderProduct {
+  productName: string;
+  quantity: number;
+}
+
+interface RecentOrder {
+  _id: string;
+  orderNumber: string;
+  buyerName: string;
+  buyerEmail: string;
+  totalAmount: number;
+  status: string;
+  createdAt: Date;
+  products: OrderProduct[];
+}
+
+interface TopProduct {
+  _id: string;
+  title: string;
+  price: number;
+  sold: number;
+  views: number;
+  rating: number;
+  totalReviews: number;
+  images: string[];
+}
+
+interface SupplierInfo {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  profileSetupCompleted?: boolean;
+  createdAt: Date;
+  membership?: {
+    tier: string;
+    isActive: boolean;
+  };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +87,7 @@ export async function GET(request: NextRequest) {
     await dbConnect();
 
     const supplierId = session.user.id;
+    const supplierObjectId = new mongoose.Types.ObjectId(session.user.id);
 
     // Get current date and last month date for comparisons
     const now = new Date();
@@ -57,6 +115,25 @@ export async function GET(request: NextRequest) {
       supplierInfo,
       ordersByStatus,
       productsByCategory
+    ]: [
+      number, // totalProducts
+      number, // productsThisMonth
+      number, // productsLastMonth
+      number, // activeProducts
+      number, // totalOrders
+      number, // ordersThisMonth
+      number, // ordersLastMonth
+      number, // pendingOrders
+      RevenueAggregation[], // totalRevenue
+      RevenueAggregation[], // revenueThisMonth
+      RevenueAggregation[], // revenueLastMonth
+      RecentOrder[], // recentOrders
+      number, // totalOffers
+      number, // offersThisMonth
+      TopProduct[], // topProducts
+      SupplierInfo | null, // supplierInfo
+      OrderStatusItem[], // ordersByStatus
+      ProductCategoryItem[] // productsByCategory
     ] = await Promise.all([
       // Products
       Product.countDocuments({ 'supplier.id': supplierId }),
@@ -74,29 +151,29 @@ export async function GET(request: NextRequest) {
       }),
 
       // Orders
-      Order.countDocuments({ supplierId }),
+      Order.countDocuments({ supplierId: supplierObjectId }),
       Order.countDocuments({ 
-        supplierId,
+        supplierId: supplierObjectId,
         createdAt: { $gte: firstDayOfMonth } 
       }),
       Order.countDocuments({ 
-        supplierId,
+        supplierId: supplierObjectId,
         createdAt: { $gte: firstDayOfLastMonth, $lte: lastDayOfLastMonth } 
       }),
       Order.countDocuments({ 
-        supplierId,
+        supplierId: supplierObjectId,
         status: { $in: ['pending', 'confirmed'] } 
       }),
 
       // Revenue
       Order.aggregate([
-        { $match: { supplierId } },
+        { $match: { supplierId: supplierObjectId } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }
       ]),
       Order.aggregate([
         { 
           $match: { 
-            supplierId,
+            supplierId: supplierObjectId,
             createdAt: { $gte: firstDayOfMonth } 
           } 
         },
@@ -105,7 +182,7 @@ export async function GET(request: NextRequest) {
       Order.aggregate([
         { 
           $match: { 
-            supplierId,
+            supplierId: supplierObjectId,
             createdAt: { $gte: firstDayOfLastMonth, $lte: lastDayOfLastMonth } 
           } 
         },
@@ -113,16 +190,16 @@ export async function GET(request: NextRequest) {
       ]),
 
       // Recent orders
-      Order.find({ supplierId })
+      Order.find({ supplierId: supplierObjectId })
         .sort({ createdAt: -1 })
         .limit(10)
         .select('orderNumber buyerName buyerEmail totalAmount status createdAt products')
-        .lean(),
+        .lean() as Promise<RecentOrder[]>,
 
       // Offers
-      Offer.countDocuments({ supplierId }),
+      Offer.countDocuments({ supplierId: supplierObjectId }),
       Offer.countDocuments({ 
-        supplierId,
+        supplierId: supplierObjectId,
         createdAt: { $gte: firstDayOfMonth } 
       }),
 
@@ -131,18 +208,18 @@ export async function GET(request: NextRequest) {
         .sort({ sold: -1, views: -1 })
         .limit(5)
         .select('title price sold views rating totalReviews images')
-        .lean(),
+        .lean() as Promise<TopProduct[]>,
 
       // Supplier information
-      User.findById(supplierId)
+      User.findById(supplierObjectId)
         .select('name email phone profileSetupCompleted createdAt membership')
-        .lean(),
+        .lean() as Promise<SupplierInfo | null>,
 
       // Order status breakdown
       Order.aggregate([
-        { $match: { supplierId } },
+        { $match: { supplierId: supplierObjectId } },
         { $group: { _id: '$status', count: { $sum: 1 } } }
-      ]),
+      ]) as Promise<OrderStatusItem[]>,
 
       // Products by category
       Product.aggregate([
@@ -150,7 +227,7 @@ export async function GET(request: NextRequest) {
         { $group: { _id: '$category', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 5 }
-      ])
+      ]) as Promise<ProductCategoryItem[]>
     ]);
 
     // Calculate growth percentages
@@ -169,25 +246,25 @@ export async function GET(request: NextRequest) {
     const revenueGrowth = calculateGrowth(revenueThisMonthAmount, revenueLastMonthAmount);
 
     // Order status breakdown
-    const orderStatusBreakdown = ordersByStatus.reduce((acc: any, item: any) => {
+    const orderStatusBreakdown = ordersByStatus.reduce((acc: Record<string, number>, item: OrderStatusItem) => {
       acc[item._id] = item.count;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
     // Products by category breakdown
-    const productCategoryBreakdown = productsByCategory.map((item: any) => ({
+    const productCategoryBreakdown = productsByCategory.map((item: ProductCategoryItem) => ({
       category: item._id,
       count: item.count
     }));
 
     // Format recent orders with product info
-    const formattedRecentOrders = recentOrders.map((order: any) => ({
+    const formattedRecentOrders = recentOrders.map((order: RecentOrder) => ({
       id: order._id,
       orderNumber: order.orderNumber,
       buyer: order.buyerName,
       buyerEmail: order.buyerEmail,
       product: order.products[0]?.productName || 'Multiple Products',
-      qty: order.products.reduce((sum: number, p: any) => sum + p.quantity, 0),
+      qty: order.products.reduce((sum: number, p: OrderProduct) => sum + p.quantity, 0),
       value: order.totalAmount,
       status: order.status,
       date: order.createdAt,
@@ -221,10 +298,10 @@ export async function GET(request: NextRequest) {
       productCategories: productCategoryBreakdown,
       supplierInfo,
       performance: {
-        totalViews: topProducts.reduce((sum: number, p: any) => sum + (p.views || 0), 0),
-        totalSold: topProducts.reduce((sum: number, p: any) => sum + (p.sold || 0), 0),
+        totalViews: topProducts.reduce((sum: number, p: TopProduct) => sum + (p.views || 0), 0),
+        totalSold: topProducts.reduce((sum: number, p: TopProduct) => sum + (p.sold || 0), 0),
         avgRating: topProducts.length > 0 ? 
-          topProducts.reduce((sum: number, p: any) => sum + (p.rating || 0), 0) / topProducts.length : 0,
+          topProducts.reduce((sum: number, p: TopProduct) => sum + (p.rating || 0), 0) / topProducts.length : 0,
         conversionRate: totalProducts > 0 ? Math.round((totalOrders / totalProducts) * 100) : 0
       }
     };

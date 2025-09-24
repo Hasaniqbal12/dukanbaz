@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     // If requestId is provided, get all bids for that request
     if (requestId) {

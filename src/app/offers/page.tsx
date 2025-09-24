@@ -38,7 +38,7 @@ export default function OffersPage() {
     //   return;
     // }
 
-    // if ((session.user as any).role !== 'buyer') {
+    // if ((session.user as { role?: string }).role !== 'buyer') {
     //   router.push('/');
     //   return;
     // }
@@ -143,7 +143,7 @@ export default function OffersPage() {
               ].map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => setFilter(tab.key as any)}
+                  onClick={() => setFilter(tab.key as 'all' | 'pending' | 'accepted' | 'rejected')}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
                     filter === tab.key
                       ? 'border-blue-500 text-blue-600'

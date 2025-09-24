@@ -50,38 +50,40 @@ interface CustomerAddress {
 }
 
 // Import proper cart item interface
-import { ICartItem } from '@/models/Cart';
+import { ICartItem } from '../../models/Cart';
 
 // Helper function to get variation display
 const getVariationDisplay = (item: ICartItem): string => {
   const variationDetails: string[] = [];
   
-  // Check individual variation attributes first
-  if (item.color && item.color !== 'default') {
-    variationDetails.push(`Color: ${item.color}`);
-  }
-  if (item.size && item.size !== 'default') {
-    variationDetails.push(`Size: ${item.size}`);
-  }
-  if (item.material && item.material !== 'default') {
-    variationDetails.push(`Material: ${item.material}`);
-  }
-  if (item.style && item.style !== 'default') {
-    variationDetails.push(`Style: ${item.style}`);
-  }
-  
-  // Fallback to variationAttributes if individual attributes not available
-  if (variationDetails.length === 0 && item.variationAttributes && item.variationAttributes.length > 0) {
-    item.variationAttributes.forEach((attr: { name: string; value: string; }) => {
-      if (attr.value && attr.value !== 'default') {
-        variationDetails.push(`${attr.name}: ${attr.value}`);
-      }
-    });
-  }
-  
-  // Use variantName if available and no other details found
-  if (variationDetails.length === 0 && item.variantName) {
-    variationDetails.push(item.variantName);
+  // Check individual variation attributes first (only for regular items)
+  if (item.type === 'regular') {
+    if (item.color && item.color !== 'default') {
+      variationDetails.push(`Color: ${item.color}`);
+    }
+    if (item.size && item.size !== 'default') {
+      variationDetails.push(`Size: ${item.size}`);
+    }
+    if (item.material && item.material !== 'default') {
+      variationDetails.push(`Material: ${item.material}`);
+    }
+    if (item.style && item.style !== 'default') {
+      variationDetails.push(`Style: ${item.style}`);
+    }
+    
+    // Fallback to variationAttributes if individual attributes not available
+    if (variationDetails.length === 0 && item.variationAttributes && item.variationAttributes.length > 0) {
+      item.variationAttributes.forEach((attr: { name: string; value: string; }) => {
+        if (attr.value && attr.value !== 'default') {
+          variationDetails.push(`${attr.name}: ${attr.value}`);
+        }
+      });
+    }
+    
+    // Use variantName if available and no other details found
+    if (variationDetails.length === 0 && item.variantName) {
+      variationDetails.push(item.variantName);
+    }
   }
   
   return variationDetails.length > 0 ? variationDetails.join(', ') : '';
@@ -93,6 +95,34 @@ interface PaymentMethod {
   type: 'card' | 'paypal' | 'bank' | 'crypto';
   icon: React.ComponentType<{ className?: string }>;
   description: string;
+}
+
+// Extended interface for cart calculations
+interface ExtendedCartItem {
+  _id?: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  supplierName: string;
+  supplierId: string;
+  type: 'regular' | 'bid';
+  // Additional properties for calculations
+  price?: number;
+  originalPrice?: number;
+  // Regular item properties
+  color?: string;
+  size?: string;
+  material?: string;
+  style?: string;
+  variantId?: string;
+  variantName?: string;
+  variationAttributes?: { name: string; value: string; }[];
+  // Bid item properties
+  requestId?: string;
+  discountPercent?: number;
 }
 
 const initialAddress: Address = {
@@ -177,7 +207,7 @@ export default function CheckoutPage() {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [saveAddress, setSaveAddress] = useState(true);
   const [orderSuccess, setOrderSuccess] = useState(false);
-  const [orderResult, setOrderResult] = useState<any>(null);
+  const [orderResult, setOrderResult] = useState<unknown>(null);
   const [addressLoading, setAddressLoading] = useState(false);
   const [hasExistingAddress, setHasExistingAddress] = useState(false);
   const [isDropshipping, setIsDropshipping] = useState(false);
@@ -214,13 +244,16 @@ export default function CheckoutPage() {
     fetchSavedAddress();
   }, [session?.user]);
 
+
   const subtotal = cartItems.reduce((sum: number, item: ICartItem) => {
-    const itemPrice = (item as any).price || (item as any).unitPrice || 0;
+    const extendedItem = item as ExtendedCartItem;
+    const itemPrice = extendedItem.price || item.unitPrice || 0;
     return sum + itemPrice * item.quantity;
   }, 0);
   const totalSavings = cartItems.reduce((sum: number, item: ICartItem) => {
-    const itemPrice = (item as any).price || (item as any).unitPrice || 0;
-    const originalPrice = (item as any).originalPrice;
+    const extendedItem = item as ExtendedCartItem;
+    const itemPrice = extendedItem.price || item.unitPrice || 0;
+    const originalPrice = extendedItem.originalPrice;
     if (originalPrice && originalPrice > itemPrice) {
       return sum + (originalPrice - itemPrice) * item.quantity;
     }
@@ -330,7 +363,8 @@ export default function CheckoutPage() {
       setOrderSuccess(true);
       
       // Redirect to success page with order IDs
-      const orderIds = result.orders?.map((order: any) => order.id).join(',') || '';
+      const resultData = result as { orders?: { id: string }[] };
+      const orderIds = resultData.orders?.map((order) => order.id).join(',') || '';
       router.push(`/checkout/success?orders=${orderIds}`);
     } catch (error) {
       alert(`Checkout failed: ${(error as Error).message}`);

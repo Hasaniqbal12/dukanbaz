@@ -3,8 +3,43 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import User from '../../../../models/User';
 import { dbConnect } from '../../../../lib/mongodb';
 import bcrypt from 'bcryptjs';
-import { JWT } from 'next-auth/jwt';
-import { Session } from 'next-auth';
+// These imports are needed for module declaration augmentation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { JWT } from 'next-auth/jwt';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { Session } from 'next-auth';
+// Import User model
+// import { IUser } from '../../../../models/User'; // Commented out as not directly used
+
+// Extend the built-in session types
+// Define custom user type for NextAuth
+interface CustomUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+declare module 'next-auth' {
+  interface Session {
+    user: CustomUser;
+  }
+  interface User {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id?: string;
+    role?: string;
+    name?: string;
+    email?: string;
+  }
+}
 
 const authOptions: AuthOptions = {
   providers: [
@@ -24,9 +59,14 @@ const authOptions: AuthOptions = {
           }
 
           const user = await User.findOne({ email: credentials.email });
-          console.log('User found:', user ? 'Yes' : 'No');
+          if (!user) {
+            console.log('User not found');
+            return null;
+          }
           
-          if (user && credentials.password) {
+          console.log('User found: Yes');
+          
+          if (credentials.password) {
             const isValidPassword = await bcrypt.compare(credentials.password, user.password);
             console.log('Password valid:', isValidPassword);
             
@@ -40,8 +80,8 @@ const authOptions: AuthOptions = {
             }
           }
           return null;
-        } catch (error) {
-          console.error('Auth error:', error);
+        } catch (error: unknown) {
+          console.error('Auth error:', error instanceof Error ? error.message : 'Unknown error');
           return null;
         }
       },
@@ -67,21 +107,22 @@ const authOptions: AuthOptions = {
     }
   },
   callbacks: {
-    async jwt({ token, user }: { token: JWT; user?: { id: string; name: string; email: string; role: string } }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.name = user.name;
-        token.email = user.email;
+        const customUser = user as CustomUser;
+        token.id = customUser.id;
+        token.role = customUser.role;
+        token.name = customUser.name;
+        token.email = customUser.email;
       }
       return token;
     },
-    async session({ session, token }: { session: Session; token: JWT & { id?: string; role?: string } }) {
+    async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.name = token.name;
-        session.user.email = token.email;
+        session.user.id = token.id as string || '';
+        session.user.role = token.role as string || 'buyer';
+        session.user.name = token.name as string || '';
+        session.user.email = token.email as string || '';
       }
       return session;
     },
@@ -95,9 +136,6 @@ const authOptions: AuthOptions = {
   useSecureCookies: process.env.NODE_ENV === 'production',
 };
 
-const handler = NextAuth(authOptions) as {
-  GET: (req: Request) => Promise<Response>;
-  POST: (req: Request) => Promise<Response>;
-};
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
 export { authOptions }; 

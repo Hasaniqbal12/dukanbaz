@@ -21,7 +21,7 @@ export async function GET(
       id,
       { $inc: { views: 1 } },
       { new: true }
-    ).lean() as any;
+    ).lean() as unknown;
     
     if (!productDoc) {
       return NextResponse.json(

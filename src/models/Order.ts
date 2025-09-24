@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IOrderProduct {
-  productId: string;
+  productId: mongoose.Types.ObjectId;
   productName: string;
   productImage?: string;
   quantity: number;
@@ -42,11 +42,11 @@ export interface ICustomerAddress {
 
 export interface IOrder extends Document {
   orderNumber: string;
-  buyerId: string;
+  buyerId: mongoose.Types.ObjectId;
   buyerName: string;
   buyerEmail: string;
   buyerPhone?: string;
-  supplierId: string;
+  supplierId: mongoose.Types.ObjectId;
   supplierName: string;
   supplierEmail: string;
   products: IOrderProduct[];
@@ -69,15 +69,15 @@ export interface IOrder extends Document {
 
 const OrderSchema = new Schema<IOrder>({
   orderNumber: { type: String, required: true, unique: true },
-  buyerId: { type: String, required: true },
+  buyerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   buyerName: { type: String, required: true },
   buyerEmail: { type: String, required: true },
   buyerPhone: { type: String },
-  supplierId: { type: String, required: true },
+  supplierId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   supplierName: { type: String, required: true },
   supplierEmail: { type: String, required: true },
   products: [{
-    productId: { type: String, required: true },
+    productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
     productName: { type: String, required: true },
     productImage: { type: String },
     quantity: { type: Number, required: true, min: 1 },

@@ -122,7 +122,7 @@ function generateCombinations(options: ProductOption[], basePrice: number): Vari
 }
 
 interface ProductDocument {
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   title: string;
   description: string;
   price: number;
@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get('featured') === 'true';
 
     // Build query
-    const query: Record<string, any> = {
+    const query: Record<string, unknown> = {
       status: 'active',
       'price': { $gte: minPrice, $lte: maxPrice }
     };
@@ -196,12 +196,9 @@ export async function GET(request: NextRequest) {
       if (supplier === 'me') {
         // Get current user's products
         const session = await getServerSession(authOptions);
-        console.log('API - supplier=me - session:', session);
         if (session?.user?.email) {
           const user = await User.findOne({ email: session.user.email });
-          console.log('API - supplier=me - user found:', user ? 'yes' : 'no');
           if (user) {
-            console.log('API - supplier=me - user ID:', user._id.toString());
             query['supplier.id'] = user._id.toString();
           } else {
             // If user not found, return empty results

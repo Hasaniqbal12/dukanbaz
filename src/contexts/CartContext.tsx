@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { ICartItem } from '@/models/Cart';
+import { ICartItem } from '../models/Cart';
 
 interface CartState {
   items: ICartItem[];
@@ -17,7 +17,7 @@ interface CartContextType extends CartState {
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
   refreshCart: () => Promise<void>;
-  checkout: (shippingAddress: any, shippingMethod: string, notes?: string, dropshippingData?: any) => Promise<any>;
+  checkout: (shippingAddress: unknown, shippingMethod: string, notes?: string, dropshippingData?: unknown) => Promise<unknown>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -48,7 +48,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         ...state,
         items: state.items.map(item =>
           item._id === action.payload.itemId
-            ? { ...item, quantity: action.payload.quantity, totalPrice: (item as any).unitPrice * action.payload.quantity }
+            ? { ...item, quantity: action.payload.quantity, totalPrice: item.unitPrice * action.payload.quantity }
             : item
         )
       };
@@ -91,8 +91,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'SET_CART', payload: cartResponse.data.items });
       dispatch({ type: 'SET_TOTAL_ITEMS', payload: cartResponse.data.totalItems });
       dispatch({ type: 'SET_TOTAL_AMOUNT', payload: cartResponse.data.totalAmount });
-    } catch (err) {
-      dispatch({ type: 'SET_ERROR', payload: err.message });
+    } catch (err: unknown) {
+      dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -112,22 +112,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           type: item.type,
           productId: item.productId,
           quantity: item.quantity,
-          tierPrice: (item as any).tierPrice,
-          variantId: item.variantId,
-          variantName: item.variantName,
-          color: (item as any).color,
-          size: (item as any).size,
-          material: (item as any).material,
-          style: (item as any).style,
-          variationAttributes: (item as any).variationAttributes,
+          tierPrice: 'tierPrice' in item ? item.tierPrice : undefined,
+          variantId: item.type === 'regular' ? item.variantId : undefined,
+          variantName: item.type === 'regular' ? item.variantName : undefined,
+          color: item.type === 'regular' ? item.color : undefined,
+          size: item.type === 'regular' ? item.size : undefined,
+          material: item.type === 'regular' ? item.material : undefined,
+          style: item.type === 'regular' ? item.style : undefined,
+          variationAttributes: item.type === 'regular' ? item.variationAttributes : undefined,
           isBulkOrder: item.isBulkOrder,
           // Bid-specific fields if applicable
           ...(item.type === 'bid' && {
-            bidId: item.bidId,
             requestId: item.requestId,
             originalPrice: item.originalPrice,
-            discountPercent: item.discountPercent,
-            bidPrice: item.bidPrice
+            discountPercent: item.discountPercent
           })
         })
       });
@@ -140,8 +138,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await response.json();
       // After adding to cart, refresh the cart to get updated data
       await fetchCart();
-    } catch (err) {
-      dispatch({ type: 'SET_ERROR', payload: err.message });
+    } catch (err: unknown) {
+      dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -166,8 +164,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const updatedCart = await response.json();
       dispatch({ type: 'SET_CART', payload: updatedCart.items });
-    } catch (err) {
-      dispatch({ type: 'SET_ERROR', payload: err.message });
+    } catch (err: unknown) {
+      dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -192,8 +190,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const updatedCart = await response.json();
       dispatch({ type: 'SET_CART', payload: updatedCart.items });
-    } catch (err) {
-      dispatch({ type: 'SET_ERROR', payload: err.message });
+    } catch (err: unknown) {
+      dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -213,8 +211,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       dispatch({ type: 'CLEAR_CART' });
-    } catch (err) {
-      dispatch({ type: 'SET_ERROR', payload: err.message });
+    } catch (err: unknown) {
+      dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -224,7 +222,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await fetchCart();
   };
 
-  const checkout = async (shippingAddress: any, shippingMethod: string, notes?: string, dropshippingData?: any) => {
+  const checkout = async (shippingAddress: unknown, shippingMethod: string, notes?: string, dropshippingData?: unknown) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -250,8 +248,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await response.json();
       dispatch({ type: 'CLEAR_CART' });
       return result;
-    } catch (err: any) {
-      dispatch({ type: 'SET_ERROR', payload: err.message });
+    } catch (err: unknown) {
+      dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Unknown error' });
       throw err;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });

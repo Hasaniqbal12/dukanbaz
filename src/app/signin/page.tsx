@@ -60,24 +60,17 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      console.log('Attempting signin with:', { email: form.email });
-      
       const result = await signIn('credentials', {
         email: form.email,
         password: form.password,
         redirect: false,
       });
 
-      console.log('Signin result:', result);
-
       if (result?.error) {
-        console.error('Signin error:', result.error);
         setError("Invalid email or password. Please try again.");
         setIsLoading(false);
       } else if (result?.ok) {
         setSuccess("Sign in successful! Redirecting...");
-        console.log('Signin successful, redirecting...');
-        
         // Force session refresh and redirect immediately
         window.location.href = "/";
       } else {

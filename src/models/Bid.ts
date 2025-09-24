@@ -1,10 +1,10 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IBid extends Document {
-  _id: string;
-  request: string; // Request ID
-  supplier: string; // User ID of supplier
-  product: string; // Product ID that supplier is offering
+  _id: mongoose.Types.ObjectId;
+  request: mongoose.Types.ObjectId; // Request ID
+  supplier: mongoose.Types.ObjectId; // User ID of supplier
+  product: mongoose.Types.ObjectId; // Product ID that supplier is offering
   bidPrice: number;
   originalPrice: number;
   quantity: number;

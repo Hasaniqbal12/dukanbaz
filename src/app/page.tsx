@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from 'react';
-import { FiStar, FiSearch, FiShield, FiTruck, FiGlobe, FiArrowRight, FiUsers, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiStar, FiSearch, FiShield, FiTruck, FiGlobe, FiArrowRight, FiUsers, FiChevronLeft, FiChevronRight, FiEdit3 } from 'react-icons/fi';
+import { useSession } from 'next-auth/react';
 import PageLayout from '../components/PageLayout';
 
 interface Product {
@@ -20,6 +21,19 @@ interface Product {
   ranking?: number;
   isNew?: boolean;
 }
+
+const categories = [
+  { name: "Electronics", icon: "📱", color: "from-blue-500 to-indigo-600" },
+  { name: "Apparel", icon: "👕", color: "from-pink-500 to-rose-600" },
+  { name: "Home & Garden", icon: "🏠", color: "from-green-500 to-emerald-600" },
+  { name: "Machinery", icon: "⚙️", color: "from-gray-500 to-slate-600" },
+  { name: "Beauty & Personal Care", icon: "💄", color: "from-purple-500 to-violet-600" },
+  { name: "Sports & Outdoor", icon: "⚽", color: "from-orange-500 to-amber-600" },
+  { name: "Automotive", icon: "🚗", color: "from-red-500 to-rose-600" },
+  { name: "Industrial Equipment", icon: "🏭", color: "from-yellow-500 to-orange-600" },
+  { name: "Food & Beverages", icon: "🍕", color: "from-green-500 to-lime-600" },
+  { name: "Health & Medical", icon: "⚕️", color: "from-teal-500 to-cyan-600" }
+];
 
 const features = [
   {
@@ -49,6 +63,7 @@ const features = [
 ];
 
 export default function Home() {
+  const { data: session } = useSession();
   const [newProducts, setNewProducts] = useState<Product[]>([]);
   const [forYouProducts, setForYouProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -255,7 +270,7 @@ export default function Home() {
                         className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 bg-white rounded-lg sm:rounded-xl border-0 focus:ring-2 focus:ring-yellow-400 text-gray-900 placeholder-gray-500 text-sm sm:text-base lg:text-lg"
                       />
                     </div>
-                    <button className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-sm sm:text-base lg:text-lg transition-all duration-300 hover:scale-105 shadow-lg">
+                    <button className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-sm sm:text-base lg:text-lg hover:scale-105 shadow-lg">
                       Search Now
                     </button>
                   </div>
@@ -296,7 +311,61 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Categories Section - Mobile Only */}
+      <section className="md:hidden py-4 sm:py-6 bg-white border-b border-gray-100">
+        <div className="px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900">Browse Categories</h2>
+              <Link href="/search" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                View All
+              </Link>
+            </div>
+            
+            {/* Horizontal Scrollable Categories */}
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {categories.map((category, index) => (
+                <Link
+                  key={index}
+                  href={`/search?category=${encodeURIComponent(category.name)}`}
+                  className="flex-none group"
+                >
+                  <div className="flex flex-col items-center min-w-[80px] sm:min-w-[100px] p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-gray-100">
+                    <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br ${category.color} flex items-center justify-center text-white text-lg sm:text-2xl mb-2 sm:mb-3 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                      {category.icon}
+                    </div>
+                    <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight group-hover:text-indigo-600 transition-colors">
+                      {category.name}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
+      {/* Post Request Button - Mobile Only */}
+      <section className="md:hidden py-3 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="px-4">
+          <div className="max-w-sm mx-auto">
+            <Link href="/requests" className="block">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <FiEdit3 className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">Post a Request</h3>
+                    <p className="text-indigo-100 text-sm">Get quotes from verified suppliers</p>
+                  </div>
+                  <FiArrowRight className="w-5 h-5 opacity-70" />
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* New Products */}
       <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-indigo-50 to-purple-50">

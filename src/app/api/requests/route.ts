@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Build query
-    const query: Record<string, any> = {};
+    const query: Record<string, unknown> = {};
 
     // Only filter by status if it's not 'all' and not empty
     if (status && status !== 'all') {
@@ -179,13 +179,13 @@ function calculatePriority(requestData: { maxBudget?: number; quantity?: number;
   let score = 0;
   
   // Budget factor
-  if (requestData.maxBudget > 100000) score += 3;
-  else if (requestData.maxBudget > 50000) score += 2;
-  else if (requestData.maxBudget > 10000) score += 1;
+  if ((requestData.maxBudget || 0) > 100000) score += 3;
+  else if ((requestData.maxBudget || 0) > 50000) score += 2;
+  else if ((requestData.maxBudget || 0) > 10000) score += 1;
   
   // Quantity factor
-  if (requestData.quantity > 1000) score += 2;
-  else if (requestData.quantity > 100) score += 1;
+  if ((requestData.quantity || 0) > 1000) score += 2;
+  else if ((requestData.quantity || 0) > 100) score += 1;
   
   // Urgency factor
   if (requestData.urgency === 'urgent') score += 3;

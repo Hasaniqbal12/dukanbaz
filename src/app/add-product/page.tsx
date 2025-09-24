@@ -134,9 +134,6 @@ export default function AddProductPage() {
   const units = ['piece', 'kg', 'gram', 'meter', 'yard', 'liter', 'box', 'pack', 'dozen', 'set'];
 
   const steps = [
-    { id: 1, title: 'Basic Info', icon: FiPackage, description: 'Product details and images' },
-    { id: 2, title: 'Pricing', icon: FiDollarSign, description: 'Pricing and tiers' },
-    { id: 3, title: 'Specifications', icon: FiTag, description: 'Features and specs' },
     { id: 4, title: 'Shipping', icon: FiTruck, description: 'Shipping and options' },
     { id: 5, title: 'Preview', icon: FiEye, description: 'Review and publish' }
   ];

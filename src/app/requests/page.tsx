@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 import PageLayout from '../../components/PageLayout';
 import BidModal from '../../components/BidModal';
 import BidManagement from '../../components/BidManagement';
 import ImageUpload from '../../components/ImageUpload';
 import { 
-  FiSearch, FiEye, FiDollarSign, FiCalendar, FiMapPin, FiTag, FiTrendingUp, FiPlus, FiSettings, FiX,
-  FiCheckCircle, FiAlertCircle, FiBarChart, FiPackage, FiShoppingCart, FiSend
+  FiSearch, FiEye, FiDollarSign, FiCalendar, FiMapPin, FiTrendingUp, FiPlus, FiSettings, FiX,
+  FiCheckCircle, FiAlertCircle, FiBarChart, FiPackage, FiSend
   } from 'react-icons/fi';
 
 interface Request {
@@ -54,7 +55,18 @@ interface RequestForm {
   uploadedImages: Array<{ url: string; originalName?: string }>;
 }
 
-
+interface Product {
+  _id: string;
+  title: string;
+  price: number;
+  category: string;
+  images: string[];
+  description: string;
+  supplier: {
+    id: string;
+    name: string;
+  };
+}
 
 const categories = [
   "Electronics", "Apparel", "Home & Garden", "Machinery", 
@@ -107,8 +119,8 @@ export default function RequestsPage() {
   // Bidding states
   const [showBidModal, setShowBidModal] = useState(false);
   const [showBidManagement, setShowBidManagement] = useState(false);
-  const [supplierProducts] = useState<Product[]>([]);
-  const [bids, setBids] = useState<any[]>([]);
+  const [supplierProducts, setSupplierProducts] = useState<Product[]>([]);
+  const [bids, setBids] = useState<unknown[]>([]);
   const [supplierBids, setSupplierBids] = useState<string[]>([]); // Track request IDs supplier has bid on
   const [hideBidOn, setHideBidOn] = useState<boolean>(false);
 
@@ -141,7 +153,7 @@ export default function RequestsPage() {
   }, [requests, searchTerm, onlyWithImages, budgetMin, budgetMax, hideBidOn, supplierBids]);
 
   // Fetch requests from API
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -160,27 +172,74 @@ export default function RequestsPage() {
         sortOrder: sortBy === 'oldest' || sortBy === 'price-low' ? 'asc' : 'desc'
       });
 
-      const response = await fetch(`/api/requests?${params}`);
+      const apiUrl = `/api/requests?${params}`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Add credentials for session
+        credentials: 'same-origin'
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+      
       const data = await response.json();
 
       if (data.success) {
-        setRequests(data.data.requests);
-        setTotalPages(data.data.pagination.totalPages);
+        const requests = data.data?.requests || [];
+        const pagination = data.data?.pagination || { totalPages: 1 };
+        
+        setRequests(requests);
+        setTotalPages(pagination.totalPages);
       } else {
-        setError('Failed to fetch requests');
+        const errorMsg = data.error || 'Failed to fetch requests';
+        setError(errorMsg);
       }
     } catch (err) {
-      setError('Error loading requests');
-      console.error('Error fetching requests:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      
+      // Check if it's a network error
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('fetch')) {
+        setError('Cannot connect to server. Please check if the development server is running.');
+      } else {
+        setError(`Error loading requests: ${errorMessage}`);
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, categoryFilter, urgencyFilter, statusFilter, sortBy]);
+
+  // Fetch supplier's existing bids to track which requests they've already bid on
+  const fetchSupplierBids = useCallback(async () => {
+    if (!session?.user || (session.user as { role?: string })?.role !== 'supplier') {
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/bids?supplierId=me');
+      const data = await response.json();
+      if (data.success) {
+        // Extract request IDs that this supplier has already bid on
+        const bidRequestIds = data.data.bids.map((bid: unknown) => {
+          const bidData = bid as { request: { _id?: string } | string };
+          return typeof bidData.request === 'string' ? bidData.request : bidData.request._id;
+        }).filter(Boolean);
+        setSupplierBids(bidRequestIds);
+      }
+    } catch {
+      // Error handled silently
+    }
+  }, [session?.user]);
 
   useEffect(() => {
     fetchRequests();
     fetchSupplierBids(); // Fetch supplier's existing bids to track which requests they've bid on
-  }, [currentPage, searchTerm, categoryFilter, urgencyFilter, statusFilter, sortBy, session]);
+  }, [fetchRequests, fetchSupplierBids]);
 
   // Handle form submission
   const handleRequestSubmit = async (e: React.FormEvent) => {
@@ -245,8 +304,7 @@ export default function RequestsPage() {
         const error = await response.json();
         alert(`Error: ${error.error || 'Failed to post request'}`);
       }
-    } catch (error) {
-      console.error('Error posting request:', error);
+    } catch {
       alert('Failed to post request. Please try again.');
     } finally {
       setSubmitting(false);
@@ -254,24 +312,46 @@ export default function RequestsPage() {
   };
 
 
-
-
-  // Fetch supplier's existing bids to track which requests they've already bid on
-  const fetchSupplierBids = async () => {
-    if (!session?.user || (session.user as { role?: string })?.role !== 'supplier') {
-      return;
-    }
+  // Fetch supplier products for bidding
+  const fetchSupplierProducts = async (): Promise<void> => {
+    if (!session?.user) return;
     
     try {
-      const response = await fetch('/api/bids?supplierId=me');
+      setLoading(true);
+      setError('');
+      
+      const params = new URLSearchParams({
+        supplierId: (session.user as { id: string }).id,
+      });
+
+      const response = await fetch(`/api/products?${params}`);
       const data = await response.json();
+
       if (data.success) {
-        // Extract request IDs that this supplier has already bid on
-        const bidRequestIds = data.data.bids.map((bid: any) => bid.request._id || bid.request);
-        setSupplierBids(bidRequestIds);
+        setSupplierProducts(data.data.products);
+      } else {
+        setError('Failed to fetch supplier products');
       }
-    } catch (error) {
-      console.error('Error fetching supplier bids:', error);
+    } catch {
+      setError('Error loading supplier products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch bids for a specific request
+  const fetchBids = async (requestId: string): Promise<void> => {
+    try {
+      const response = await fetch(`/api/bids?requestId=${requestId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setBids(data.data.bids);
+      } else {
+        // Error handled silently
+      }
+    } catch {
+      // Error handled silently
     }
   };
 
@@ -290,7 +370,7 @@ export default function RequestsPage() {
   };
 
   // Submit bid
-  const handleBidSubmit = async (bidData: { requestId: string; productId: string; bidPrice: number; quantity: number; message: string; deliveryTime: number }) => {
+  const handleBidSubmit = async (bidData: { requestId: string; productId: string; bidPrice: number; quantity: number; message: string; deliveryTime: number }): Promise<void> => {
     try {
       const response = await fetch('/api/bids', {
         method: 'POST',
@@ -317,7 +397,6 @@ export default function RequestsPage() {
         throw new Error(error.error || 'Failed to submit bid');
       }
     } catch (error) {
-      console.error('Error submitting bid:', error);
       throw error;
     }
   };
@@ -340,7 +419,6 @@ export default function RequestsPage() {
 
       alert('Bid accepted successfully! An order has been created.');
     } catch (error) {
-      console.error('Error accepting bid:', error);
       throw error;
     }
   };
@@ -363,7 +441,6 @@ export default function RequestsPage() {
 
       alert('Bid rejected successfully.');
     } catch (error) {
-      console.error('Error rejecting bid:', error);
       throw error;
     }
   };
@@ -391,8 +468,7 @@ export default function RequestsPage() {
       } else {
         throw new Error('Failed to delete image');
       }
-    } catch (error) {
-      console.error('Error removing image:', error);
+    } catch {
       alert('Failed to remove image');
     }
   };
@@ -432,8 +508,8 @@ export default function RequestsPage() {
       containerMaxWidth="full"
     >
         
-        {/* Modern Hero Section */}
-        <div className="relative bg-white -mx-4 sm:-mx-6 lg:-mx-8 mb-8 overflow-hidden">
+        {/* Modern Hero Section - Compact on Mobile */}
+        <div className="relative bg-white -mx-4 sm:-mx-6 lg:-mx-8 mb-4 sm:mb-8 overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
             <div className="absolute inset-0 opacity-40">
@@ -444,63 +520,21 @@ export default function RequestsPage() {
             </div>
           </div>
           
-          <div className="relative px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+          <div className="relative px-4 sm:px-6 lg:px-8 py-6 sm:py-12 lg:py-20">
             <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-12">
-                {/* Main Title */}
-                <div className="inline-flex items-center gap-3 bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
-                  <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-                  {filteredRequests.length} Active Requests
-                </div>
-                
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                  Find Your Next
-                  <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"> Business Opportunity</span>
-                </h1>
-                
-                <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-                  {(session?.user as any)?.role === 'supplier' 
-                    ? 'Connect with verified buyers worldwide and grow your business with quality wholesale opportunities'
-                    : 'Post your requirements and receive competitive quotes from trusted suppliers across Pakistan'
-                  }
-                </p>
-                
-                {/* Stats Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-2xl mx-auto mb-10">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <FiTrendingUp className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div className="text-2xl font-bold text-gray-900">2.5K+</div>
-                    <div className="text-sm text-gray-600">Active Requests</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <FiCheckCircle className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div className="text-2xl font-bold text-gray-900">98%</div>
-                    <div className="text-sm text-gray-600">Success Rate</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <FiDollarSign className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div className="text-2xl font-bold text-gray-900">₨50M+</div>
-                    <div className="text-sm text-gray-600">Deals Closed</div>
-                  </div>
-                </div>
-              </div>
               
-              {/* Action Buttons - Modern Design */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              
+              {/* Action Buttons - Compact on Mobile */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 {session?.user && (
                   <button
                     onClick={() => setShowForm(true)}
-                    className="group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    className="group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-lg sm:rounded-xl font-semibold text-base sm:text-lg flex items-center justify-center gap-2 sm:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                   >
-                    <FiPlus className="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
-                    {(session?.user as any)?.role === 'supplier' ? 'Browse Requests' : 'Post New Request'}
-                    <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <FiPlus className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-90" />
+                    <span className="hidden sm:inline">{(session?.user as { role?: string })?.role === 'supplier' ? 'Browse Requests' : 'Post New Request'}</span>
+                    <span className="sm:hidden">{(session?.user as { role?: string })?.role === 'supplier' ? 'Browse' : 'Post Request'}</span>
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </button>
@@ -509,24 +543,24 @@ export default function RequestsPage() {
                 {!session?.user && (
                   <a
                     href="/signin"
-                    className="group bg-white text-indigo-600 hover:bg-gray-50 px-8 py-4 rounded-xl font-semibold inline-flex items-center justify-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border border-gray-200"
+                    className="group bg-white text-indigo-600 hover:bg-gray-50 px-6 py-3 sm:px-8 sm:py-4 rounded-lg sm:rounded-xl font-medium inline-flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border border-gray-200"
                   >
                     <FiSettings className="w-5 h-5" />
-                    Sign In to Get Started
+                    <span>Sign In to Get Started</span>
                     <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </a>
                 )}
                 
-                {session?.user && (session.user as any).role === 'buyer' && (
+                {session?.user && (session.user as { role?: string }).role === 'buyer' && (
                   <a
                     href="/offers"
-                    className="group bg-white/80 backdrop-blur-sm text-indigo-600 hover:bg-white px-6 py-3 rounded-xl font-medium inline-flex items-center justify-center gap-2 transition-all duration-200 border border-indigo-200 hover:border-indigo-300"
+                    className="group bg-white/80 backdrop-blur-sm text-indigo-600 hover:bg-white px-6 py-3 sm:px-8 sm:py-4 rounded-lg sm:rounded-xl font-medium inline-flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 border border-indigo-200 hover:border-indigo-300"
                   >
                     <FiEye className="w-5 h-5" />
-                    View My Offers
-                    <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span>View My Offers</span>
+                    <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </a>
@@ -536,32 +570,16 @@ export default function RequestsPage() {
           </div>
         </div>
         
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          {/* Modern Filters Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8 mb-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-0 mb-8">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Discover Opportunities
-                </h2>
-                <p className="text-gray-600">Filter through {filteredRequests.length} active requests to find your perfect match</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg text-sm font-medium">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  {filteredRequests.length} Live
-                </div>
-                <div className="text-sm text-gray-500">
-                  Updated 2 min ago
-                </div>
-              </div>
-            </div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-6 lg:py-8">
+          {/* Modern Filters Section - Compact on Mobile */}
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8 mb-4 sm:mb-8">
             
-            {/* Mobile Filter Toggle */}
-            <div className="block md:hidden mb-6">
+            
+            {/* Mobile Filter Toggle - More Compact */}
+            <div className="block md:hidden mb-4">
               <button
                 onClick={() => setShowMobileFilters(!showMobileFilters)}
-                className="w-full flex items-center justify-between bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-3 rounded-xl font-medium transition-colors"
+                className="w-full flex items-center justify-between bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2.5 rounded-lg font-medium transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <FiSettings className="w-5 h-5" />
@@ -704,7 +722,7 @@ export default function RequestsPage() {
                   </div>
                   
                   {/* Supplier: Hide requests I have bid on */}
-                  {(session?.user as any)?.role === 'supplier' && (
+                  {(session?.user as { role?: string })?.role === 'supplier' && (
                     <div className="flex items-center">
                       <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                         <input
@@ -843,7 +861,7 @@ export default function RequestsPage() {
                     </label>
                   </div>
                   
-                  {(session?.user as any)?.role === 'supplier' && (
+                  {(session?.user as { role?: string })?.role === 'supplier' && (
                     <div className="flex items-center">
                       <label className="inline-flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
                         <input
@@ -909,12 +927,12 @@ export default function RequestsPage() {
               <FiBarChart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No requests found</h3>
               <p className="text-gray-600 mb-6">
-                {(session?.user as any)?.role === 'buyer' 
+                {(session?.user as { role?: string })?.role === 'buyer' 
                   ? 'Start by posting your first product request'
                   : 'Check back later for new buyer requests'
                 }
               </p>
-              {(session?.user as any)?.role === 'buyer' && (
+              {(session?.user as { role?: string })?.role === 'buyer' && (
                 <button
                   onClick={() => setShowForm(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg inline-flex items-center gap-2"
@@ -926,55 +944,55 @@ export default function RequestsPage() {
             </div>
           ) : (
             <>
-              {/* Project Requests - Freelancing Style */}
-              <div className="space-y-6">
+              {/* Project Requests - Compact Mobile Style */}
+              <div className="space-y-3 sm:space-y-6">
                 {filteredRequests.map((request) => (
                   <div
                     key={request._id}
-                    className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group relative"
+                    className="bg-white rounded-lg sm:rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group relative"
                   >
-                    {/* Project Header - Mobile Optimized */}
-                    <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
-                        <div className="flex items-start gap-3 sm:gap-4">
-                          {/* Buyer Avatar */}
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0">
+                    {/* Project Header - Compact Mobile */}
+                    <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 px-3 sm:px-6 py-2 sm:py-4 border-b border-gray-100">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
+                        <div className="flex items-start gap-2 sm:gap-4">
+                          {/* Buyer Avatar - Smaller on Mobile */}
+                          <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm sm:text-lg flex-shrink-0">
                             {request.buyerName?.charAt(0) || 'B'}
                           </div>
                           
-                          {/* Project Info */}
+                          {/* Project Info - Compact */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 sm:mb-1">
-                              <h3 className="text-lg sm:text-xl font-bold text-gray-900 hover:text-indigo-600 cursor-pointer transition-colors truncate">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1 sm:mb-1">
+                              <h3 className="text-base sm:text-xl font-bold text-gray-900 hover:text-indigo-600 cursor-pointer transition-colors">
                                 {request.productName}
                               </h3>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(request.urgency)} self-start sm:self-auto`}>
+                              <span className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getUrgencyColor(request.urgency)} self-start sm:self-auto`}>
                                 {request.urgency.toUpperCase()}
                               </span>
                             </div>
                             
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                            <div className="flex flex-wrap items-center gap-1 sm:gap-4 text-xs text-gray-600">
                               <div className="flex items-center gap-1">
                                 <span className="font-medium text-gray-700">by {request.buyerName}</span>
                               </div>
                               <div className="flex items-center gap-1">
-                                <FiMapPin className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span>{request.location}</span>
+                                <FiMapPin className="w-3 h-3" />
+                                <span className="truncate max-w-[80px] sm:max-w-none">{request.location}</span>
                               </div>
                               <div className="flex items-center gap-1">
-                                <FiCalendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <FiCalendar className="w-3 h-3" />
                                 <span>{new Date(request.createdAt).toLocaleDateString()}</span>
                               </div>
                             </div>
                           </div>
                         </div>
                         
-                        {/* Status Badge - Mobile Optimized */}
-                        <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-2">
-                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                        {/* Status Badge - Compact Mobile */}
+                        <div className="flex items-center justify-between sm:justify-start gap-2">
+                          <span className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
                             {request.status.replace('_', ' ').charAt(0).toUpperCase() + request.status.replace('_', ' ').slice(1)}
                           </span>
-                          <div className="text-right">
+                          <div className="text-right hidden sm:block">
                             <div className="text-xs text-gray-500">Project ID</div>
                             <div className="text-xs sm:text-sm font-mono text-gray-700">#{request.requestNumber}</div>
                           </div>
@@ -982,77 +1000,75 @@ export default function RequestsPage() {
                       </div>
                     </div>
 
-                    {/* Project Content - Mobile Optimized */}
-                    <div className="p-4 sm:p-6">
-                      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+                    {/* Project Content - Compact Mobile */}
+                    <div className="p-3 sm:p-6">
+                      <div className="grid lg:grid-cols-3 gap-3 sm:gap-6">
                         {/* Left: Project Details */}
-                        <div className="lg:col-span-2 space-y-4">
-                          {/* Description */}
+                        <div className="lg:col-span-2 space-y-3 sm:space-y-4">
+                          {/* Description - Full Text */}
                           <div>
-                            <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Project Description</h4>
-                            <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
+                            <h4 className="font-semibold text-gray-900 mb-1 sm:mb-2 text-sm">Description</h4>
+                            <p className="text-gray-700 leading-relaxed text-sm">
                               {request.description}
                             </p>
                           </div>
                           
-                          {/* Requirements Grid - Mobile Stacked */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                            <div className="bg-blue-50 rounded-lg p-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <FiPackage className="w-5 h-5 text-blue-600" />
-                                <span className="font-medium text-blue-900">Quantity Needed</span>
+                          {/* Requirements Grid - Compact Mobile */}
+                          <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                            <div className="bg-blue-50 rounded-lg p-2 sm:p-4">
+                              <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                                <FiPackage className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                                <span className="font-medium text-blue-900 text-xs sm:text-sm">Quantity</span>
                               </div>
-                              <div className="text-2xl font-bold text-blue-700">
+                              <div className="text-lg sm:text-2xl font-bold text-blue-700">
                                 {request.quantity.toLocaleString()} {request.unit}
                               </div>
                             </div>
                             
-                            <div className="bg-green-50 rounded-lg p-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <FiDollarSign className="w-5 h-5 text-green-600" />
-                                <span className="font-medium text-green-900">Budget Range</span>
+                            <div className="bg-green-50 rounded-lg p-2 sm:p-4">
+                              <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                                <FiDollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                                <span className="font-medium text-green-900 text-xs sm:text-sm">Budget</span>
                               </div>
-                              <div className="text-lg font-bold text-green-700">
+                              <div className="text-sm sm:text-lg font-bold text-green-700">
                                 ₨{(request.targetPrice || 0).toLocaleString()}
                                 {request.maxBudget && request.maxBudget !== request.targetPrice && (
-                                  <span className="text-sm font-normal"> - ₨{request.maxBudget.toLocaleString()}</span>
+                                  <span className="text-xs sm:text-sm font-normal block sm:inline"> - ₨{request.maxBudget.toLocaleString()}</span>
                                 )}
                               </div>
                             </div>
                           </div>
                           
-                          {/* Category & Tags */}
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+                          {/* Category - Compact */}
+                          <div className="flex items-center gap-2">
+                            <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-md text-xs font-medium">
                               {request.category}
                             </span>
-                            <div className="flex items-center gap-1 text-sm text-gray-500">
-                              <FiTag className="w-4 h-4" />
-                              <span>Wholesale Request</span>
-                            </div>
                           </div>
                           
-                          {/* Reference Images */}
+                          {/* Reference Images - More Compact */}
                           {request.attachments && request.attachments.length > 0 && (
                             <div>
-                              <h4 className="font-semibold text-gray-900 mb-3">Reference Images</h4>
-                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
-                                {request.attachments.slice(0, 6).map((imageUrl, index) => (
-                                  <div key={index} className="aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-indigo-300 transition-colors cursor-pointer group">
-                                    <img
+                              <h4 className="font-medium text-gray-900 mb-1 text-xs">Images ({request.attachments.length})</h4>
+                              <div className="flex gap-1 overflow-x-auto">
+                                {request.attachments.slice(0, 3).map((imageUrl, index) => (
+                                  <div key={index} className="w-12 h-12 sm:w-16 sm:h-16 rounded-md overflow-hidden border border-gray-200 flex-shrink-0">
+                                    <Image
                                       src={imageUrl}
-                                      alt={`Reference ${index + 1}`}
-                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                      alt={`Ref ${index + 1}`}
+                                      width={64}
+                                      height={64}
+                                      className="w-full h-full object-cover"
                                       onError={(e) => {
                                         e.currentTarget.style.display = 'none';
                                       }}
                                     />
                                   </div>
                                 ))}
-                                {request.attachments.length > 6 && (
-                                  <div className="aspect-square rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
-                                    <span className="text-sm font-medium text-gray-600">
-                                      +{request.attachments.length - 6}
+                                {request.attachments.length > 3 && (
+                                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs font-medium text-gray-600">
+                                      +{request.attachments.length - 3}
                                     </span>
                                   </div>
                                 )}
@@ -1061,85 +1077,69 @@ export default function RequestsPage() {
                           )}
                         </div>
                         
-                        {/* Right: Project Stats & Actions */}
-                        <div className="space-y-4">
-                          {/* Project Stats */}
-                          <div className="bg-gray-50 rounded-xl p-4">
-                            <h4 className="font-semibold text-gray-900 mb-3">Project Stats</h4>
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <FiEye className="w-4 h-4" />
-                                  <span>Views</span>
-                                </div>
-                                <span className="font-semibold text-gray-900">{request.viewCount || 0}</span>
+                        {/* Right: Project Stats & Actions - Ultra Compact */}
+                        <div className="space-y-2 sm:space-y-4">
+                          {/* Project Stats - Minimal */}
+                          <div className="bg-gray-50 rounded-lg p-2 sm:p-4">
+                            <div className="grid grid-cols-2 gap-2 text-center">
+                              <div>
+                                <div className="text-lg font-bold text-gray-900">{request.viewCount || 0}</div>
+                                <div className="text-xs text-gray-500">Views</div>
                               </div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <FiShoppingCart className="w-4 h-4" />
-                                  <span>Proposals</span>
-                                </div>
-                                <span className="font-semibold text-indigo-600">{request.bidCount || 0}</span>
+                              <div>
+                                <div className="text-lg font-bold text-indigo-600">{request.bidCount || 0}</div>
+                                <div className="text-xs text-gray-500">Bids</div>
                               </div>
-                              <div className="pt-2 border-t border-gray-200">
-                                <div className="text-xs text-gray-500 mb-1">Deadline</div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  {new Date(request.expiresAt).toLocaleDateString()}
-                                </div>
-                              </div>
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-gray-200 text-center">
+                              <div className="text-xs text-gray-500">Deadline: {new Date(request.expiresAt).toLocaleDateString()}</div>
                             </div>
                           </div>
                           
-                          {/* Action Buttons */}
-                          <div className="space-y-3">
+                          {/* Action Buttons - Compact */}
+                          <div className="space-y-2">
                             {/* Supplier Actions */}
-                            {(session?.user as any)?.role === 'supplier' && (request.status === 'open' || request.status === 'bidding') && (
-                              <div className="space-y-2">
+                            {(session?.user as { role?: string })?.role === 'supplier' && (request.status === 'open' || request.status === 'bidding') && (
+                              <div>
                                 {!supplierBids.includes(request._id) ? (
                                   <button
                                     onClick={() => openBidModal(request)}
-                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 text-sm"
                                   >
-                                    <FiSend className="w-5 h-5" />
+                                    <FiSend className="w-4 h-4" />
                                     Send Proposal
                                   </button>
                                 ) : (
-                                  <div className="w-full bg-green-100 text-green-800 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 border border-green-200">
-                                    <FiCheckCircle className="w-5 h-5" />
+                                  <div className="w-full bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 border border-green-200 text-sm">
+                                    <FiCheckCircle className="w-4 h-4" />
                                     Proposal Sent
                                   </div>
                                 )}
-                                <p className="text-xs text-gray-500 text-center">
-                                  Submit your best offer with product details
-                                </p>
                               </div>
                             )}
 
                             {/* Buyer Actions */}
                             {session?.user && session.user.email === request.buyerEmail && (
-                              <div className="space-y-2">
+                              <div>
                                 <button
                                   onClick={() => openBidManagement(request)}
-                                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+                                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 text-sm"
                                 >
-                                  <FiEye className="w-5 h-5" />
+                                  <FiEye className="w-4 h-4" />
                                   View Proposals ({request.bidCount || 0})
                                 </button>
-                                <p className="text-xs text-gray-500 text-center">
-                                  Review and compare supplier proposals
-                                </p>
                               </div>
                             )}
                             
                             {/* Guest/Other Users */}
                             {!session?.user && (
-                              <div className="text-center">
+                              <div>
                                 <a
                                   href="/signin"
-                                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
+                                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm"
                                 >
-                                  <FiSettings className="w-5 h-5" />
-                                  Sign in to Send Proposal
+                                  <FiSettings className="w-4 h-4" />
+                                  Sign in to Bid
                                 </a>
                               </div>
                             )}
@@ -1225,7 +1225,7 @@ export default function RequestsPage() {
               
               {/* Modal Body */}
               <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form onSubmit={handleRequestSubmit} className="space-y-8">
                   {/* Step 1: Product Information */}
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-blue-100">
                     <div className="flex items-center gap-3 mb-6">
@@ -1234,7 +1234,7 @@ export default function RequestsPage() {
                       </div>
                       <div>
                         <h3 className="text-xl font-bold text-gray-900">Product Information</h3>
-                        <p className="text-gray-600 text-sm">Tell us what you're looking for</p>
+                        <p className="text-gray-600 text-sm">Tell us what you&apos;re looking for</p>
                       </div>
                     </div>
                     

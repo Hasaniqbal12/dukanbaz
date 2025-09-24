@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IOffer extends Document {
-  requestId: string | number;
-  supplierId: mongoose.Types.ObjectId | string;
+  requestId: mongoose.Types.ObjectId;
+  supplierId: mongoose.Types.ObjectId;
   price: string;
   moq: string;
   message?: string;
@@ -12,7 +12,7 @@ export interface IOffer extends Document {
 }
 
 const OfferSchema = new Schema<IOffer>({
-  requestId: { type: Schema.Types.Mixed, required: true },
+  requestId: { type: Schema.Types.ObjectId, ref: 'Request', required: true },
   supplierId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   price: { type: String, required: true },
   moq: { type: String, required: true },

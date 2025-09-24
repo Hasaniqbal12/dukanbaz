@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { dbConnect } from '../../../../lib/mongodb';
 import User from '../../../../models/User';
 import Product from '../../../../models/Product';
@@ -9,7 +9,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import type { Session } from 'next-auth';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions) as Session | null;
     
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       totalOrders,
       ordersThisMonth,
       ordersLastMonth,
-      totalRevenue,
+      revenueResult,
       revenueThisMonth,
       revenueLastMonth,
       totalRequests,
@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
       verifiedSuppliers,
       pendingUsers,
       ordersByStatus,
+      avgOrderResult,
       recentActivity
     ] = await Promise.all([
       // Users
@@ -123,6 +124,11 @@ export async function GET(request: NextRequest) {
         { $group: { _id: '$status', count: { $sum: 1 } } }
       ]),
 
+      // Average order value
+      Order.aggregate([
+        { $group: { _id: null, avg: { $avg: '$totalAmount' } } }
+      ]),
+
       // Recent activity (last 10 items across all types)
       Promise.all([
         User.find().sort({ createdAt: -1 }).limit(5).select('name email role createdAt').lean(),
@@ -144,13 +150,13 @@ export async function GET(request: NextRequest) {
     const offerGrowth = calculateGrowth(offersThisMonth, offersLastMonth);
 
     // Revenue calculations
-    const totalRevenueAmount = totalRevenue[0]?.total || 0;
+    const totalRevenue = revenueResult[0]?.total || 0;
     const revenueThisMonthAmount = revenueThisMonth[0]?.total || 0;
     const revenueLastMonthAmount = revenueLastMonth[0]?.total || 0;
     const revenueGrowth = calculateGrowth(revenueThisMonthAmount, revenueLastMonthAmount);
 
     // Order status breakdown
-    const orderStatusBreakdown = ordersByStatus.reduce((acc: any, item: any) => {
+    const orderStatusBreakdown = ordersByStatus.reduce((acc: Record<string, number>, item: { _id: string; count: number }) => {
       acc[item._id] = item.count;
       return acc;
     }, {});
@@ -158,21 +164,21 @@ export async function GET(request: NextRequest) {
     // Format recent activity
     const [recentUsers, recentOrders, recentProducts] = recentActivity;
     const formattedActivity = [
-      ...recentUsers.map((user: any) => ({
+      ...recentUsers.map((user: { _id: string; name: string; role: string; createdAt: string }) => ({
         type: 'user',
         id: user._id,
         title: `New ${user.role} registered`,
         subtitle: user.name,
         timestamp: user.createdAt
       })),
-      ...recentOrders.map((order: any) => ({
+      ...recentOrders.map((order: { _id: string; orderNumber: string; buyerName: string; totalAmount: number; createdAt: string }) => ({
         type: 'order',
         id: order._id,
         title: `Order ${order.orderNumber}`,
         subtitle: `${order.buyerName} - PKR ${order.totalAmount.toLocaleString()}`,
         timestamp: order.createdAt
       })),
-      ...recentProducts.map((product: any) => ({
+      ...recentProducts.map((product: { _id: string; title: string; supplier?: { name: string }; price: number; createdAt: string }) => ({
         type: 'product',
         id: product._id,
         title: product.title,
@@ -188,7 +194,7 @@ export async function GET(request: NextRequest) {
         totalOrders,
         totalRequests,
         totalOffers,
-        totalRevenue: totalRevenueAmount,
+        totalRevenue,
         verifiedSuppliers,
         pendingApprovals: pendingUsers,
         activeProducts
@@ -216,8 +222,8 @@ export async function GET(request: NextRequest) {
         totalProducts,
         verifiedSuppliers,
         totalUsers,
-        conversionRate: totalProducts > 0 ? Math.round((totalOrders / totalProducts) * 100) : 0,
-        avgOrderValue: totalOrders > 0 ? Math.round(totalRevenueAmount / totalOrders) : 0
+        conversionRate: totalUsers > 0 ? ((totalOrders / totalUsers) * 100) : 0,
+        avgOrderValue: avgOrderResult[0]?.avg || 0
       }
     };
 

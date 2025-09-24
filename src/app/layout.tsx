@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import MobileBottomNav from "../components/MobileBottomNav";
 import SessionClientProvider from "../components/SessionClientProvider";
-import SessionDebug from "../components/SessionDebug";
 import { CartProvider } from "../contexts/CartContext";
 
 const geistSans = Geist({
@@ -40,7 +39,6 @@ export default function RootLayout({
           <CartProvider>
             {children}
             <MobileBottomNav />
-            <SessionDebug />
           </CartProvider>
         </SessionClientProvider>
       </body>

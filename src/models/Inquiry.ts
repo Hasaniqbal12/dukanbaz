@@ -1,10 +1,10 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IInquiry extends Document {
-  productId: string;
+  productId: mongoose.Types.ObjectId;
   productTitle?: string;
-  supplierId: string;
-  buyerId?: string;
+  supplierId: mongoose.Types.ObjectId;
+  buyerId?: mongoose.Types.ObjectId;
   buyerName: string;
   buyerEmail?: string;
   companyName?: string;
@@ -26,10 +26,10 @@ export interface IInquiry extends Document {
 }
 
 const InquirySchema = new Schema<IInquiry>({
-  productId: { type: String, required: true, index: true },
+  productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true, index: true },
   productTitle: { type: String },
-  supplierId: { type: String, required: true, index: true },
-  buyerId: { type: String, index: true },
+  supplierId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  buyerId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
   buyerName: { type: String, required: true, trim: true },
   buyerEmail: { type: String, trim: true },
   companyName: { type: String, trim: true },

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // Build query
     const query: Record<string, unknown> = {
-      userId: (session.user as any).id
+      userId: (session.user as { id: string }).id
     };
 
     if (unreadOnly) {
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         .lean(),
       Notification.countDocuments(query),
       Notification.countDocuments({
-        userId: (session.user as any).id,
+        userId: (session.user as { id: string }).id,
         isRead: false
       })
     ]);
@@ -166,14 +166,14 @@ export async function PUT(request: NextRequest) {
     if (markAllAsRead) {
       // Mark all user's notifications as read
       updateQuery = {
-        userId: (session.user as any).id,
+        userId: (session.user as { id: string }).id,
         isRead: false
       };
     } else if (notificationIds && notificationIds.length > 0) {
       // Mark specific notifications as read
       updateQuery = {
         _id: { $in: notificationIds },
-        userId: (session.user as any).id,
+        userId: (session.user as { id: string }).id,
         isRead: false
       };
     } else {
@@ -231,14 +231,14 @@ export async function DELETE(request: NextRequest) {
     if (deleteAll) {
       // Delete all user's read notifications
       deleteQuery = {
-        userId: (session.user as any).id,
+        userId: (session.user as { id: string }).id,
         isRead: true
       };
     } else if (notificationIds.length > 0) {
       // Delete specific notifications
       deleteQuery = {
         _id: { $in: notificationIds },
-        userId: (session.user as any).id
+        userId: (session.user as { id: string }).id
       };
     } else {
       return NextResponse.json(

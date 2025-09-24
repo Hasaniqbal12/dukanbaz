@@ -50,6 +50,35 @@ interface CartItemForDisplay {
   maxOrderQuantity?: number;
 }
 
+// Extended interface for cart items with additional display properties
+interface ExtendedCartItem {
+  _id?: string;
+  id?: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  supplierName: string;
+  supplierId: string;
+  color?: string;
+  size?: string;
+  material?: string;
+  style?: string;
+  variantId?: string;
+  variantName?: string;
+  variationAttributes?: { name: string; value: string; }[];
+  maxOrderQuantity?: number;
+  // Additional display properties
+  name?: string;
+  image?: string;
+  price?: number;
+  total?: number;
+  supplier?: string;
+  originalPrice?: number;
+}
+
 interface GroupedCartItem {
   productId: string;
   productName: string;
@@ -79,7 +108,7 @@ export default function CartPage() {
     
     const grouped: { [key: string]: GroupedCartItem } = {};
 
-    (cart as CartItemForDisplay[])?.forEach((item: CartItemForDisplay) => {
+    (cart as unknown as ExtendedCartItem[])?.forEach((item: ExtendedCartItem) => {
       // Group by product and supplier only, not by variation
       const productKey = `${item.productId}-${item.supplierId}`;
       
@@ -98,7 +127,7 @@ export default function CartPage() {
 
       // Add item to the group (each variation as separate item)
       grouped[productKey].items.push({
-        _id: item.id || item._id,
+        _id: item.id || item._id || '',
         productId: item.productId,
         productName: item.name || item.productName,
         productImage: item.image || item.productImage,
@@ -134,8 +163,6 @@ export default function CartPage() {
   // Cart data is automatically loaded by CartContext on mount
 
   const toggleFavorite = async (productId: number) => {
-    setAddingToFavorites(productId);
-    
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
     
@@ -144,8 +171,6 @@ export default function CartPage() {
         ? prev.filter(id => id !== productId)
         : [...prev, productId]
     );
-    
-    setAddingToFavorites(null);
   };
 
   const updateQty = async (id: string, newQty: number) => {
@@ -175,10 +200,14 @@ export default function CartPage() {
   };
 
   // Calculate cart totals
-  const subtotal = cart?.reduce((sum: number, item: any) => sum + ((item.price || item.unitPrice || 0) * (item.quantity || 1)), 0) || 0;
-  const totalSavings = cart?.reduce((sum: number, item: any) => {
-    if (item.originalPrice && (item.price || item.unitPrice)) {
-      return sum + (item.originalPrice - (item.price || item.unitPrice)) * (item.quantity || 1);
+  const subtotal = cart?.reduce((sum: number, item: unknown) => {
+    const cartItem = item as ExtendedCartItem;
+    return sum + ((cartItem.price || cartItem.unitPrice || 0) * (cartItem.quantity || 1));
+  }, 0) || 0;
+  const totalSavings = cart?.reduce((sum: number, item: unknown) => {
+    const cartItem = item as ExtendedCartItem;
+    if (cartItem.originalPrice && (cartItem.price || cartItem.unitPrice)) {
+      return sum + (cartItem.originalPrice - (cartItem.price || cartItem.unitPrice)) * (cartItem.quantity || 1);
     }
     return sum;
   }, 0) || 0;
