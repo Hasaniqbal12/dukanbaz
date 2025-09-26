@@ -3,16 +3,44 @@
 import { useState } from "react";
 import { FiX, FiSave, FiUser, FiMail, FiBriefcase } from 'react-icons/fi';
 
+// Interface for profile data
+interface ProfileData {
+  name?: string;
+  company?: string;
+  bio?: string;
+  phone?: string;
+  website?: string;
+  location?: string;
+  businessType?: string;
+  companySize?: string;
+  yearEstablished?: string;
+  role?: string;
+  [key: string]: unknown;
+}
+
+// Interface for form data
+interface FormData {
+  name: string;
+  company: string;
+  bio: string;
+  phone: string;
+  website: string;
+  location: string;
+  businessType: string;
+  companySize: string;
+  yearEstablished: string;
+}
+
 interface ProfileEditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  profileData: Record<string, any>;
-  onSave: (data: Record<string, any>) => void;
+  profileData: ProfileData;
+  onSave: (data: FormData) => void;
   loading?: boolean;
 }
 
 export default function ProfileEditModal({ isOpen, onClose, profileData, onSave, loading = false }: ProfileEditModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: profileData?.name || '',
     company: profileData?.company || '',
     bio: profileData?.bio || '',

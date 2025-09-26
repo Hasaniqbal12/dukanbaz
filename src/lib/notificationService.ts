@@ -5,7 +5,7 @@ interface NotificationData {
   message: string;
   priority: 'low' | 'medium' | 'high';
   actionUrl?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 export async function sendNotification(notificationData: NotificationData): Promise<boolean> {
@@ -88,7 +88,7 @@ export async function sendPushNotification(
   userId: string,
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): Promise<boolean> {
   try {
     // TODO: Implement push notification logic
@@ -109,13 +109,19 @@ export async function sendPushNotification(
   }
 }
 
-// Helper function to generate email templates
-export function generateOrderNotificationEmail(orderData: {
+// Interface for order data
+interface OrderNotificationData {
   orderNumber: string;
   buyerName: string;
   totalAmount: number;
-  products: Array<{ productName: string; quantity: number; }>;
-}): string {
+  products: Array<{
+    productName: string;
+    quantity: number;
+  }>;
+}
+
+// Helper function to generate email templates
+export function generateOrderNotificationEmail(orderData: OrderNotificationData): string {
   return `
     <!DOCTYPE html>
     <html>

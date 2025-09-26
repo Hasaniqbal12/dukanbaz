@@ -3,6 +3,32 @@ import Cart from '@/models/Cart';
 import Product from '@/models/Product';
 import User from '@/models/User';
 
+// Interface for cart item
+interface ICartItem {
+  _id?: mongoose.Types.ObjectId;
+  type: 'regular' | 'bid';
+  productId: mongoose.Types.ObjectId;
+  productName: string;
+  productImage?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  supplierId: mongoose.Types.ObjectId;
+  supplierName: string;
+  addedAt: Date;
+  isBulkOrder: boolean;
+  minOrderQuantity?: number;
+  maxOrderQuantity?: number;
+  bulkDiscount?: number;
+  variantId?: string;
+  variantName?: string;
+  // Bid-specific fields
+  requestId?: mongoose.Types.ObjectId;
+  originalPrice?: number;
+  discountPercent?: number;
+}
+
+
 type AddToCartParams = {
   userId: string | mongoose.Types.ObjectId;
   productId: string | mongoose.Types.ObjectId;
@@ -143,7 +169,7 @@ export async function updateCartItemQuantity(
   }
 
   // Get the item to check min/max quantities
-  const item = cart.items.find((i) => (i as any)._id.toString() === itemId.toString());
+  const item = cart.items.find((i: ICartItem) => i._id?.toString() === itemId.toString());
   if (!item) {
     throw new Error('Item not found in cart');
   }

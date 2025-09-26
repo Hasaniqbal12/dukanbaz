@@ -10,7 +10,7 @@ import {
 
 interface Category {
   name: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   color: string;
   subcategories: string[];
 }
