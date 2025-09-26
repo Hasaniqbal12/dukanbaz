@@ -11,10 +11,8 @@ import {
   FiPhone,
   FiMapPin,
   FiCalendar,
-  FiArrowRight,
+
   FiDownload,
-  FiShare2,
-  FiHome,
   FiShoppingBag
 } from 'react-icons/fi';
 

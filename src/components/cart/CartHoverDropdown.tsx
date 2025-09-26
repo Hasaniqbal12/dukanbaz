@@ -2,9 +2,47 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
-import { FiShoppingCart, FiPackage, FiMinus, FiPlus, FiTrash2, FiArrowRight } from 'react-icons/fi';
+import { FiShoppingCart, FiPackage, FiMinus, FiPlus, FiArrowRight } from 'react-icons/fi';
 import { useCart } from '../../contexts/CartContext';
 import { ICartItem } from '../../models/Cart';
+
+// Extended cart item interface with additional properties
+interface ExtendedCartItem {
+  _id: string;
+  productId: string;
+  supplierId: string;
+  quantity: number;
+  productName?: string;
+  name?: string;
+  productImage?: string;
+  image?: string;
+  supplierName?: string;
+  supplier?: string;
+  totalPrice?: number;
+  unitPrice?: number;
+  color?: string;
+  size?: string;
+  material?: string;
+  style?: string;
+  variantName?: string;
+  variationAttributes?: Array<{
+    name: string;
+    value: string;
+  }>;
+}
+
+// Grouped items interface
+interface GroupedCartItem {
+  key: string;
+  items: ExtendedCartItem[];
+  productId: string;
+  productName: string;
+  productImage?: string;
+  supplierId: string;
+  supplierName?: string;
+  totalQuantity: number;
+  totalPrice: number;
+}
 
 
 interface CartHoverDropdownProps {
@@ -16,38 +54,42 @@ const CartHoverDropdown: React.FC<CartHoverDropdownProps> = ({ isVisible, onClos
   const { items: cartItems, updateQuantity, removeItem } = useCart();
 
   // Group items by product only (not by variation) to match cart page design
-  const groupedItems = useMemo(() => {
+  const groupedItems = useMemo((): GroupedCartItem[] => {
     if (!cartItems || cartItems.length === 0) {
       return [];
     }
     
-    const groups: { [key: string]: ICartItem[] } = {};
+    const groups: { [key: string]: ExtendedCartItem[] } = {};
     
     cartItems.forEach(item => {
+      const extendedItem = item as ExtendedCartItem;
       // Group by product and supplier only, not by variation
-      const groupKey = `${item.productId}-${item.supplierId}`;
+      const groupKey = `${extendedItem.productId}-${extendedItem.supplierId}`;
       
       if (!groups[groupKey]) {
         groups[groupKey] = [];
       }
-      groups[groupKey].push(item);
+      groups[groupKey].push(extendedItem);
     });
     
-    return Object.entries(groups).map(([key, items]) => ({
+    return Object.entries(groups).map(([key, items]): GroupedCartItem => ({
       key,
       items,
       productId: items[0].productId,
-      productName: (items[0] as any).productName || (items[0] as any).name || 'Unknown Product',
-      productImage: (items[0] as any).productImage || (items[0] as any).image,
+      productName: items[0].productName || items[0].name || 'Unknown Product',
+      productImage: items[0].productImage || items[0].image,
       supplierId: items[0].supplierId,
-      supplierName: (items[0] as any).supplierName || (items[0] as any).supplier,
+      supplierName: items[0].supplierName || items[0].supplier,
       totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
-      totalPrice: items.reduce((sum, item) => sum + ((item as any).totalPrice || ((item as any).unitPrice * item.quantity)), 0)
+      totalPrice: items.reduce((sum, item) => sum + (item.totalPrice || (item.unitPrice || 0) * item.quantity), 0)
     }));
   }, [cartItems]);
 
   const totalItems = cartItems?.reduce((sum: number, item: ICartItem) => sum + item.quantity, 0) || 0;
-  const totalAmount = cartItems?.reduce((sum: number, item: ICartItem) => sum + ((item as any).totalPrice || ((item as any).unitPrice * item.quantity)), 0) || 0;
+  const totalAmount = cartItems?.reduce((sum: number, item: ICartItem) => {
+    const extendedItem = item as ExtendedCartItem;
+    return sum + (extendedItem.totalPrice || (extendedItem.unitPrice || 0) * item.quantity);
+  }, 0) || 0;
 
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -79,7 +121,7 @@ const CartHoverDropdown: React.FC<CartHoverDropdownProps> = ({ isVisible, onClos
       <div className="max-h-80 overflow-y-auto">
         {groupedItems.length > 0 ? (
           <div className="divide-y divide-gray-100">
-            {groupedItems.slice(0, 3).map((group: any) => (
+            {groupedItems.slice(0, 3).map((group: GroupedCartItem) => (
               <div key={`${group.productId}-${group.supplierId}`} className="p-4">
                 {/* Product Header */}
                 <div className="flex items-start space-x-3 mb-3">
@@ -118,12 +160,12 @@ const CartHoverDropdown: React.FC<CartHoverDropdownProps> = ({ isVisible, onClos
 
                 {/* Variations */}
                 <div className="space-y-2 ml-19">
-                  {group.items.map((item: any, index: number) => {
+                  {group.items.map((item: ExtendedCartItem, index: number) => {
                     const variationKey = `${item._id}-${index}`;
                     const mainItem = item;
                     
                     // Get variation display for this specific item
-                    const getItemVariationDisplay = (cartItem: any) => {
+                    const getItemVariationDisplay = (cartItem: ExtendedCartItem) => {
                       const variationDetails = [];
                       
                       // Use individual variation attributes with labels

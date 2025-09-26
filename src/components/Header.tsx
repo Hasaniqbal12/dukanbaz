@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -14,37 +14,39 @@ import {
   FiSearch,
   FiShoppingCart,
   FiUser,
-  FiMenu,
   FiX,
   FiBook,
   FiChevronDown,
   FiPackage,
   FiTruck,
   FiShield,
-  FiMapPin,
-  FiPhone,
-  FiMail,
-  FiClock,
+ 
   FiHeart,
   FiMessageCircle,
   FiSettings,
-  FiLogOut,
-  FiBell,
-  FiMessageSquare,
+ 
   FiGrid,
-  FiTrendingUp,
-  FiAward,
+ 
   FiUsers,
+ 
   FiClipboard,
-  FiDollarSign,
-  FiTarget,
-  FiGlobe,
-  FiZap,
+  
 } from 'react-icons/fi';
 
 interface HeaderProps {
   showMegaMenu?: boolean;
   className?: string;
+}
+
+// Search result interface
+interface SearchResult {
+  _id?: string;
+  id?: string;
+  name: string;
+  title?: string;
+  category: string;
+  price: number;
+  images?: string[];
 }
 
 // Categories data for mega menu
@@ -150,7 +152,7 @@ export default function Header({ className = "" }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchQuery, setMobileSearchQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData>({});
@@ -209,23 +211,7 @@ export default function Header({ className = "" }: HeaderProps) {
     }
   }, [session?.user, dashboardData, dashboardLoading]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  const formatTimeAgo = (date: string) => {
-    const now = new Date();
-    const past = new Date(date);
-    const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  };
+ 
 
   // Search functionality
   const handleSearch = async (query: string) => {
@@ -325,7 +311,7 @@ export default function Header({ className = "" }: HeaderProps) {
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 max-h-96 overflow-y-auto">
                     <div className="p-4">
                       <h3 className="text-sm font-semibold text-gray-500 mb-3">Search Results</h3>
-                      {searchResults.slice(0, 8).map((product: any, index) => (
+                      {searchResults.slice(0, 8).map((product: SearchResult, index) => (
                         <Link
                           key={index}
                           href={`/product/${product._id || product.id}`}
@@ -336,13 +322,13 @@ export default function Header({ className = "" }: HeaderProps) {
                             {product.images?.[0] && (
                               <img 
                                 src={product.images[0]} 
-                                alt={product.name}
+                                alt={product.name || product.title}
                                 className="w-full h-full object-cover rounded-lg"
                               />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-medium text-gray-900 truncate">{product.name}</h4>
+                            <h4 className="text-sm font-medium text-gray-900 truncate">{product.name || product.title}</h4>
                             <p className="text-xs text-gray-500 truncate">{product.category}</p>
                             <p className="text-sm font-semibold text-indigo-600">${product.price}</p>
                           </div>

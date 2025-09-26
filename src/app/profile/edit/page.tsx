@@ -5,14 +5,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   FiSave,
-  FiX,
-  FiUpload,
   FiUser,
   FiBriefcase,
   FiMapPin,
-  FiPhone,
-  FiGlobe,
-  FiFileText,
   FiArrowLeft
 } from "react-icons/fi";
 import Link from "next/link";

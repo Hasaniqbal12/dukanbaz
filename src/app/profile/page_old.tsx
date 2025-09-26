@@ -29,13 +29,9 @@ import {
   FiBarChart,
   FiCreditCard,
   FiCamera,
-  FiUpload,
   FiTrash2,
   FiAlertCircle,
   FiLogOut,
-  FiGrid,
-  FiList,
-  FiPlus,
   FiAward
 } from "react-icons/fi";
 import Link from "next/link";

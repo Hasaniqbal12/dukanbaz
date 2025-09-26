@@ -11,19 +11,14 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiUser,
-  FiMapPin,
   FiPhone,
   FiMail,
   FiCalendar,
   FiDollarSign,
   FiSearch,
-  FiFilter,
   FiRefreshCw,
   FiAlertCircle,
   FiEye,
-  FiDownload,
-  FiMessageCircle,
-  FiEdit,
   FiTrash2
 } from 'react-icons/fi';
 
