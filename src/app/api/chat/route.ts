@@ -4,10 +4,24 @@ import { authOptions } from '../auth/[...nextauth]/route';
 import { dbConnect } from '../../../lib/mongodb';
 import Message from '../../../models/Message';
 import Conversation from '../../../models/Conversation';
+import type { Session } from 'next-auth';
+
+// Type definitions
+interface ExtendedSession extends Session {
+  user: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
+}
+
+
+
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as ExtendedSession | null;
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -34,7 +48,7 @@ export async function GET(request: NextRequest) {
       });
     } else {
       // Get all conversations for the user
-      const userId = (session.user as any).id;
+      const userId = session.user.id;
       const conversations = await Conversation.find({
         participants: userId
       })
@@ -55,7 +69,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as ExtendedSession | null;
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -64,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { receiverId, message, messageType = 'text', fileUrl, fileName } = body;
-    const senderId = (session.user as any).id;
+    const senderId = session.user.id;
 
     // Find or create conversation
     let conversation = await Conversation.findOne({
@@ -116,7 +130,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as ExtendedSession | null;
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -125,7 +139,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const { conversationId, markAsRead } = body;
-    const userId = (session.user as any).id;
+    const userId = session.user.id;
 
     if (markAsRead) {
       // Mark all messages in conversation as read

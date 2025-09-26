@@ -7,6 +7,46 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import type { Session } from 'next-auth';
 
+// Type definitions
+interface PopulatedUser {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role: string;
+  company?: string;
+  verified: boolean;
+}
+
+interface PopulatedMessage {
+  _id: string;
+  content: string;
+  messageType: string;
+  sender: PopulatedUser;
+  createdAt: Date;
+  isRead: boolean;
+}
+
+interface ParticipantDetail {
+  userId: string;
+  unreadCount: number;
+  isArchived: boolean;
+  isMuted: boolean;
+  lastReadAt?: Date;
+}
+
+interface PopulatedConversation {
+  _id: string;
+  conversationType: string;
+  title?: string;
+  participants: PopulatedUser[];
+  lastMessage?: PopulatedMessage;
+  participantDetails?: ParticipantDetail[];
+  updatedAt: Date;
+  createdAt: Date;
+  isActive: boolean;
+}
+
 // GET - Fetch user's conversations
 export async function GET(request: NextRequest) {
   try {
@@ -57,15 +97,15 @@ export async function GET(request: NextRequest) {
       .lean();
 
     // Format conversations with additional info
-    const formattedConversations = conversations.map((conv: any) => {
+    const formattedConversations = (conversations as PopulatedConversation[]).map((conv) => {
       // Get the other participant (for direct conversations)
       const otherParticipant = conv.participants.find(
-        (p: any) => p._id.toString() !== session.user.id
+        (p) => p._id.toString() !== session.user.id
       );
 
       // Get user-specific details
       const userDetails = conv.participantDetails?.find(
-        (pd: any) => pd.userId.toString() === session.user.id
+        (pd) => pd.userId.toString() === session.user.id
       );
 
       return {

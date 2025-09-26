@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
   FiUser, 
   FiPackage, 
@@ -44,7 +45,6 @@ interface Bid {
 }
 
 interface BidManagementProps {
-  requestId: string;
   bids: Bid[];
   onAcceptBid: (bidId: string) => Promise<void>;
   onRejectBid: (bidId: string) => Promise<void>;
@@ -52,7 +52,6 @@ interface BidManagementProps {
 }
 
 export default function BidManagement({ 
-  requestId, 
   bids, 
   onAcceptBid, 
   onRejectBid,
@@ -71,8 +70,9 @@ export default function BidManagement({
     try {
       await onAcceptBid(bidId);
       onRefresh();
-    } catch (err: any) {
-      setError(err.message || 'Failed to accept bid');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to accept bid';
+      setError(errorMessage);
     } finally {
       setLoading('');
     }
@@ -84,8 +84,9 @@ export default function BidManagement({
     try {
       await onRejectBid(bidId);
       onRefresh();
-    } catch (err: any) {
-      setError(err.message || 'Failed to reject bid');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reject bid';
+      setError(errorMessage);
     } finally {
       setLoading('');
     }
@@ -119,9 +120,11 @@ export default function BidManagement({
           <div className="flex items-center gap-3">
             <div className="relative">
               {bid.supplier.profileImage ? (
-                <img
+                <Image
                   src={bid.supplier.profileImage}
                   alt={bid.supplier.name}
+                  width={48}
+                  height={48}
                   className="w-12 h-12 rounded-full object-cover"
                 />
               ) : (
@@ -168,9 +171,11 @@ export default function BidManagement({
         {/* Product Info */}
         <div className="flex gap-4 mb-4">
           {bid.product.images[0] && (
-            <img
+            <Image
               src={bid.product.images[0]}
               alt={bid.product.name}
+              width={80}
+              height={80}
               className="w-20 h-20 object-cover rounded-lg"
             />
           )}

@@ -4,6 +4,7 @@ import Product from '../../../models/Product';
 import User from '../../../models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
+import mongoose from 'mongoose';
 
 // TypeScript interfaces for product variations
 interface ProductOptionValue {

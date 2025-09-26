@@ -4,6 +4,99 @@ import Product from '../../../../models/Product';
 import User from '../../../../models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]/route';
+import type { Session } from 'next-auth';
+
+// Type definitions
+interface ExtendedSession extends Session {
+  user: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    role?: string;
+  };
+}
+
+interface ProductOption {
+  name: string;
+  values: Array<{
+    name: string;
+    value: string;
+    color?: string;
+    priceModifier?: number;
+  }>;
+}
+
+interface ProductSpecification {
+  name?: string;
+  value?: string;
+}
+
+interface ProductSupplier {
+  id?: string;
+  _id?: string;
+  name?: string;
+  companyName?: string;
+  location?: string;
+  verified?: boolean;
+}
+
+interface ProductVariations {
+  attributes?: Array<{
+    name: string;
+    values: Array<{
+      name: string;
+      value: string;
+      hexCode?: string;
+      priceModifier?: number;
+    }>;
+  }>;
+  combinations?: Array<Record<string, unknown>>;
+  defaultCombination?: Record<string, unknown> | null;
+}
+
+interface ShippingInfo {
+  weight?: number;
+  freeShipping?: boolean;
+  cost?: number;
+  shippingCost?: number;
+  estimatedDelivery?: string;
+  dropshippingAvailable?: boolean;
+  dropshippingFee?: number;
+}
+
+interface ProductDocument {
+  _id: string | Record<string, unknown>;
+  title?: string;
+  name?: string;
+  description?: string;
+  images?: string[];
+  price: number;
+  comparePrice?: number;
+  originalPrice?: number;
+  category?: string;
+  subcategory?: string;
+  moq?: string | number;
+  stock?: number;
+  available?: number;
+  unit?: string;
+  supplier?: ProductSupplier;
+  rating?: number;
+  reviewCount?: number;
+  tags?: string[];
+  specifications?: ProductSpecification[];
+  createdAt?: Date;
+  updatedAt?: Date;
+  views?: number;
+  priceTiers?: Array<{
+    minQty: number;
+    maxQty: number | null;
+    price: number;
+  }>;
+  options?: ProductOption[];
+  variations?: ProductVariations;
+  shippingInfo?: ShippingInfo;
+}
 
 // GET - Fetch single product by ID
 export async function GET(
@@ -21,7 +114,7 @@ export async function GET(
       id,
       { $inc: { views: 1 } },
       { new: true }
-    ).lean() as unknown;
+    ).lean() as ProductDocument | null;
     
     if (!productDoc) {
       return NextResponse.json(
@@ -79,9 +172,9 @@ export async function GET(
       ],
       // Product variations - map from options to variations format
       variations: productDoc.options && productDoc.options.length > 0 ? {
-        attributes: productDoc.options.map((option: any) => ({
+        attributes: productDoc.options.map((option) => ({
           name: option.name,
-          values: option.values.map((value: any) => ({
+          values: option.values.map((value) => ({
             name: value.name,
             value: value.value,
             hexCode: value.color || undefined,
@@ -134,7 +227,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as ExtendedSession | null;
     
     if (!session?.user) {
       return NextResponse.json(
@@ -251,7 +344,7 @@ export async function PUT(
     };
     
     const product = await Product.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true, runValidators: true }
     );
@@ -302,12 +395,14 @@ export async function PUT(
 // DELETE - Delete product
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params in Next.js 15
+    const { id } = await params;
     await dbConnect();
     
-    const product = await Product.findByIdAndDelete(params.id);
+    const product = await Product.findByIdAndDelete(id);
     
     if (!product) {
       return NextResponse.json(

@@ -3,12 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { 
-  FiPackage, 
-  FiHeart, 
-  FiTruck, 
-  FiShield, 
-  FiSettings, 
-  FiBook, 
+ 
   FiStar, 
   FiArrowRight 
 } from 'react-icons/fi';

@@ -5,10 +5,64 @@ import Order from '../../../models/Order';
 import Cart from '../../../models/Cart';
 import User from '../../../models/User';
 import { sendNotification } from '../../../lib/notificationService';
+import type { Session } from 'next-auth';
+
+// Type definitions
+interface ExtendedSession extends Session {
+  user: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    role?: string;
+    phone?: string;
+  };
+}
+
+interface PopulatedProduct {
+  _id: string;
+  title: string;
+  images: string[];
+  price: {
+    selling?: number;
+    wholesale?: number;
+  };
+  supplier: string;
+}
+
+interface PopulatedSupplier {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+interface CartItem {
+  _id: string;
+  productId: PopulatedProduct;
+  supplierId: PopulatedSupplier;
+  productName: string;
+  productImage?: string;
+  quantity: number;
+  unitPrice: number;
+  type?: string;
+  variantId?: string;
+  variantName?: string;
+  color?: string;
+  size?: string;
+  material?: string;
+  style?: string;
+  variationAttributes?: Array<{ name: string; value: string }>;
+}
+
+interface PopulatedCart {
+  _id: string;
+  userId: string;
+  items: CartItem[];
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as ExtendedSession | null;
     
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -61,15 +115,15 @@ export async function POST(req: NextRequest) {
         select: 'title images price supplier'
       })
       .populate('items.supplierId', 'name email')
-      .lean();
+      .lean() as PopulatedCart | null;
     
     if (!cart || cart.items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
     
     // Group items by supplier
-    const itemsBySupplier: Record<string, any[]> = {};
-    cart.items.forEach((item: any) => {
+    const itemsBySupplier: Record<string, CartItem[]> = {};
+    cart.items.forEach((item) => {
       const supplierId = item.supplierId._id.toString();
       if (!itemsBySupplier[supplierId]) {
         itemsBySupplier[supplierId] = [];
@@ -83,10 +137,10 @@ export async function POST(req: NextRequest) {
       const supplier = items[0].supplierId;
       
       // Calculate total amount for this supplier's items
-      const totalAmount = items.reduce((sum: number, item: any) => sum + (item.unitPrice * item.quantity), 0);
+      const totalAmount = items.reduce((sum: number, item) => sum + (item.unitPrice * item.quantity), 0);
       
       // Format products for order
-      const orderProducts = items.map((item: any) => ({
+      const orderProducts = items.map((item) => ({
         productId: item.productId._id,
         productName: item.productName,
         productImage: item.productImage || item.productId.images?.[0] || '',

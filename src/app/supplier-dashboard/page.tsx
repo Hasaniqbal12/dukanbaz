@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import PageLayout from "../../components/PageLayout";
 import {
   FiBarChart,
@@ -93,6 +94,10 @@ interface SupplierStats {
     sales: number;
     revenue: number;
     image?: string;
+    views: number;
+    sold: number;
+    rating: number;
+    price: number;
   }>;
   analytics: {
     totalRevenue: number;
@@ -168,7 +173,7 @@ export default function SupplierDashboard() {
   };
 
   // Handle membership upgrade
-  const handleMembershipUpgrade = async (tier: string) => {
+  const handleMembershipUpgrade = async () => {
     try {
       // Refresh dashboard data to get updated membership status
       await fetchDashboardData();
@@ -208,7 +213,7 @@ export default function SupplierDashboard() {
     }
   };
 
-  const getVariationDisplay = (order: any) => {
+  const getVariationDisplay = (order: { products?: Array<{ color?: string; size?: string; material?: string; style?: string; variationAttributes?: Array<{ value: string }> }> }) => {
     if (!order.products || order.products.length === 0) return '';
     
     const product = order.products[0];
@@ -221,22 +226,13 @@ export default function SupplierDashboard() {
     
     // Use variationAttributes if available
     if (product.variationAttributes && product.variationAttributes.length > 0) {
-      const attrs = product.variationAttributes.map((attr: any) => attr.value).filter((val: string) => val && val !== 'default');
+      const attrs = product.variationAttributes.map((attr) => attr.value).filter((val: string) => val && val !== 'default');
       variations.push(...attrs);
     }
     
     return variations.length > 0 ? ` (${variations.join(', ')})` : '';
   };
 
-  const formatGrowth = (growth: number) => {
-    if (growth > 0) {
-      return { value: `+${growth}%`, trend: 'up', color: 'text-green-600' };
-    } else if (growth < 0) {
-      return { value: `${growth}%`, trend: 'down', color: 'text-red-600' };
-    } else {
-      return { value: '0%', trend: 'neutral', color: 'text-gray-600' };
-    }
-  };
 
   if (status === 'loading' || loading) {
     return (
@@ -249,7 +245,7 @@ export default function SupplierDashboard() {
     );
   }
 
-  if (!session || (session as { user?: { role?: string } })?.user?.role !== 'supplier') {
+  if (!session || (session as typeof session & { user?: { role?: string } })?.user?.role !== 'supplier') {
     return null;
   }
 
@@ -604,7 +600,7 @@ export default function SupplierDashboard() {
                       </div>
                       <div className="divide-y divide-gray-200">
                         {stats.recentOrders.slice(0, 5).map((order) => (
-                          <div key={order.id} className="px-6 py-4 hover:bg-gray-50">
+                          <div key={order._id} className="px-6 py-4 hover:bg-gray-50">
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center">
@@ -652,10 +648,12 @@ export default function SupplierDashboard() {
                           <div key={product._id} className="px-6 py-4 hover:bg-gray-50">
                             <div className="flex items-center">
                               <div className="flex-shrink-0 h-12 w-12">
-                                <img
+                                <Image
                                   className="h-12 w-12 rounded-lg object-cover"
-                                  src={product.images[0] || '/placeholder-product.jpg'}
+                                  src={product.image || '/placeholder-product.jpg'}
                                   alt={product.title}
+                                  width={48}
+                                  height={48}
                                 />
                               </div>
                               <div className="ml-4 flex-1">
