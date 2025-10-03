@@ -609,10 +609,9 @@ export default function EarningsPage() {
               </div>
             </div>
           )}
-            </div>
-          </div>
         </div>
       </div>
+    </div>
     </>
   );
 }
