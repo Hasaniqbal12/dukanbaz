@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Head from "next/head";
@@ -17,7 +17,7 @@ import {
   FiAlertCircle
 } from "react-icons/fi";
 
-export default function BuyerSetupPage() {
+function BuyerSetupContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -80,12 +80,14 @@ export default function BuyerSetupPage() {
     businessType: "",
     industry: "",
     companySize: "",
+    foundedYear: "",
     
     // Contact Info
     contactPerson: "",
     email: "",
     phone: "",
     website: "",
+    linkedin: "",
     
     // Address
     country: "Pakistan",
@@ -98,12 +100,16 @@ export default function BuyerSetupPage() {
     businessLicense: "",
     taxId: "",
     annualRevenue: "",
+    annualBudget: "",
     
     // Purchasing Preferences
-    productCategories: [],
-    preferredSuppliers: [],
+    productCategories: [] as string[],
+    interestedCategories: [] as string[],
+    preferredSuppliers: [] as string[],
     budgetRange: "",
     orderFrequency: "",
+    purchaseVolume: "",
+    paymentMethods: [] as string[],
     
     // Company Description
     description: "",
@@ -129,13 +135,13 @@ export default function BuyerSetupPage() {
   
   // Redirect if not authenticated
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (typeof window !== 'undefined' && status === 'unauthenticated') {
       router.push('/signin');
     }
   }, [status, router]);
 
-  // Show loading while checking authentication
-  if (status === 'loading') {
+  // Show loading while checking authentication or during SSR
+  if (typeof window === 'undefined' || status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
@@ -218,7 +224,7 @@ export default function BuyerSetupPage() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && typeof window !== 'undefined') {
       setFormData(prev => ({ ...prev, profileImage: file }));
       setImagePreview(URL.createObjectURL(file));
     }
@@ -1027,4 +1033,19 @@ export default function BuyerSetupPage() {
       </div>
     </>
   );
-} 
+}
+
+export default function BuyerSetupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <BuyerSetupContent />
+    </Suspense>
+  );
+}
