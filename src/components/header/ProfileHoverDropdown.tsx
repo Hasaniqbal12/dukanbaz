@@ -42,7 +42,7 @@ const ProfileHoverDropdown: React.FC<ProfileHoverDropdownProps> = ({
               {user?.name || 'User'}
             </h3>
             <p className="text-sm text-gray-500 truncate">
-              {user?.email || 'user@example.com'}
+              {user?.email}
             </p>
           </div>
         </div>

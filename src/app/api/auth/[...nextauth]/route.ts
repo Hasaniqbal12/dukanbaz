@@ -108,23 +108,47 @@ const authOptions: AuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        const customUser = user as CustomUser;
-        token.id = customUser.id;
-        token.role = customUser.role;
-        token.name = customUser.name;
-        token.email = customUser.email;
+      try {
+        if (user) {
+          const customUser = user as CustomUser;
+          token.id = customUser.id;
+          token.role = customUser.role;
+          token.name = customUser.name;
+          token.email = customUser.email;
+        }
+        return token;
+      } catch (error) {
+        console.error('JWT callback error:', error);
+        return token;
       }
-      return token;
     },
     async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string || '';
-        session.user.role = token.role as string || 'buyer';
-        session.user.name = token.name as string || '';
-        session.user.email = token.email as string || '';
+      try {
+        if (token && session.user) {
+          session.user.id = token.id as string || '';
+          session.user.role = token.role as string || 'buyer';
+          session.user.name = token.name as string || '';
+          session.user.email = token.email as string || '';
+        }
+        return session;
+      } catch (error) {
+        console.error('Session callback error:', error);
+        return session;
       }
-      return session;
+    },
+  },
+  events: {
+    async signIn({ user, account, profile }) {
+      console.log('✅ User signed in:', { user: user.email, account: account?.provider });
+    },
+    async signOut({ session, token }) {
+      console.log('👋 User signed out:', session?.user?.email);
+    },
+    async createUser({ user }) {
+      console.log('👤 New user created:', user.email);
+    },
+    async session({ session, token }) {
+      console.log('🔄 Session accessed:', session?.user?.email);
     },
   },
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development-12345',

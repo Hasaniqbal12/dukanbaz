@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from 'next-auth/react';
 import { useCart } from '../../contexts/CartContext';
 import PageLayout from '../../components/PageLayout';
 import { 
@@ -92,7 +93,18 @@ interface GroupedCartItem {
 
 export default function CartPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const { items: cart, loading, error, updateQuantity, removeItem, refreshCart, totalItems } = useCart();
+
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    if (status === 'loading') return; // Still loading
+    
+    if (!session) {
+      router.push('/signin?redirect=/cart');
+      return;
+    }
+  }, [session, status, router]);
   
   const [isLoaded, setIsLoaded] = useState(false);
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -215,10 +227,50 @@ export default function CartPage() {
   const promoDiscountAmount = (subtotal * promoDiscount) / 100;
   const total = subtotal + shipping - promoDiscountAmount;
 
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <PageLayout
+        title="Shopping Cart - DukanBaz"
+        description="Review your wholesale product selections and proceed to checkout"
+        showHeader={true}
+        showFooter={true}
+        showMegaMenu={false}
+        backgroundPattern="gradient"
+        containerMaxWidth="full"
+      >
+        <div className="px-4 py-8 flex justify-center items-center h-64">
+          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+          <span className="ml-3 text-gray-600">Checking authentication...</span>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Don't render cart content if not authenticated (will redirect)
+  if (!session) {
+    return (
+      <PageLayout
+        title="Shopping Cart - DukanBaz"
+        description="Review your wholesale product selections and proceed to checkout"
+        showHeader={true}
+        showFooter={true}
+        showMegaMenu={false}
+        backgroundPattern="gradient"
+        containerMaxWidth="full"
+      >
+        <div className="px-4 py-8 flex justify-center items-center h-64">
+          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+          <span className="ml-3 text-gray-600">Redirecting to sign in...</span>
+        </div>
+      </PageLayout>
+    );
+  }
+
   if (loading) {
     return (
       <PageLayout
-        title="Shopping Cart - WholesaleHub"
+        title="Shopping Cart - DukanBaz"
         description="Review your wholesale product selections and proceed to checkout"
         showHeader={true}
         showFooter={true}

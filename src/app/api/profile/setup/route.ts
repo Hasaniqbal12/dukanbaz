@@ -16,6 +16,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { step, data, role } = body;
 
+    // Debug logging
+    console.log('Setup API called with:', { step, role, dataKeys: Object.keys(data || {}) });
+
     await dbConnect();
     
     const user = await User.findOne({ email: session.user.email });
@@ -33,63 +36,199 @@ export async function POST(request: NextRequest) {
     let updateData: any = {};
 
     switch (step) {
-      case 1: // Contact & Location
+      case 1: // Company Information (Step 1 for both buyer/supplier)
         updateData = {
-          phone: data.phone,
-          address: data.address,
-          city: data.city,
-          state: data.state,
-          zipCode: data.zipCode,
-          country: data.country || 'Pakistan'
-        };
-        break;
-
-      case 2: // Business Information
-        updateData = {
-          businessName: data.businessName,
-          businessType: data.businessType,
-          taxId: data.taxId,
+          company: data.companyName || data.businessName,
           website: data.website,
-          description: data.description,
-          companySize: data.companySize,
-          foundedYear: data.foundedYear,
-          languages: data.languages
+          bio: data.description,
+          businessInfo: {
+            businessName: data.companyName || data.businessName,
+            businessType: data.businessType,
+            employeeCount: data.companySize,
+            establishedYear: data.foundedYear
+          }
         };
         break;
 
-      case 3: // Product/Purchase Information
-        if (role === 'supplier') {
-          updateData = {
-            productCategories: data.productCategories,
-            certifications: data.certifications,
-            minOrderQuantity: data.minOrderQuantity,
-            productionCapacity: data.productionCapacity
+      case 2: // Contact & Location Information
+        updateData = {
+          phone: data.phone || data.contactPerson,
+          location: data.city && data.state ? `${data.city}, ${data.state}, ${data.country || 'Pakistan'}` : undefined
+        };
+
+        // Only save address if we have the required fields
+        if (data.address && data.city && data.state) {
+          updateData.address = {
+            street: data.address,
+            city: data.city,
+            state: data.state,
+            postalCode: data.zipCode || '',
+            country: data.country || 'Pakistan'
           };
-        } else if (role === 'buyer') {
-          updateData = {
-            productCategories: data.productCategories,
-            purchaseVolume: data.purchaseVolume,
-            preferredPaymentMethods: data.preferredPaymentMethods,
-            annualRevenue: data.annualRevenue
+        }
+
+        // Update business info
+        updateData.businessInfo = {
+          ...user.businessInfo,
+          businessPhone: data.phone,
+          businessEmail: data.email
+        };
+
+        // Only save business address if we have the required fields
+        if (data.address && data.city && data.state) {
+          updateData.businessInfo.businessAddress = {
+            street: data.address,
+            city: data.city,
+            state: data.state,
+            postalCode: data.zipCode || '',
+            country: data.country || 'Pakistan'
           };
         }
         break;
 
-      case 4: // Additional Information
+      case 3: // Business Details (Optional)
         updateData = {
-          socialLinks: data.socialLinks,
-          profileImage: data.profileImage,
-          coverImage: data.coverImage,
-          bankDetails: data.bankDetails,
-          businessLicense: data.businessLicense
+          businessInfo: {
+            ...user.businessInfo
+          }
         };
+
+        // Only save business details if provided
+        if (data.businessLicense || data.taxId) {
+          updateData.businessInfo.taxId = data.businessLicense || data.taxId;
+        }
+        
+        if (data.annualRevenue) {
+          updateData.businessInfo.annualRevenue = data.annualRevenue;
+        }
+        
+        if (data.certifications && data.certifications.length > 0) {
+          updateData.businessInfo.certifications = data.certifications;
+        }
+        
+        // Store role-specific data in a flexible way (also optional)
+        if (role === 'buyer') {
+          updateData.buyerProfile = {
+            ...user.buyerProfile
+          };
+          
+          if (data.productCategories && data.productCategories.length > 0) {
+            updateData.buyerProfile.productCategories = data.productCategories;
+          }
+          
+          if (data.budgetRange) {
+            updateData.buyerProfile.budgetRange = data.budgetRange;
+          }
+          
+          if (data.orderFrequency) {
+            updateData.buyerProfile.orderFrequency = data.orderFrequency;
+          }
+          
+          if (data.preferredSuppliers && data.preferredSuppliers.length > 0) {
+            updateData.buyerProfile.preferredSuppliers = data.preferredSuppliers;
+          }
+        } else if (role === 'supplier') {
+          updateData.supplierProfile = {
+            ...user.supplierProfile
+          };
+          
+          if (data.productCategories && data.productCategories.length > 0) {
+            updateData.supplierProfile.productCategories = data.productCategories;
+          }
+          
+          if (data.minOrderQuantity) {
+            updateData.supplierProfile.minOrderQuantity = data.minOrderQuantity;
+          }
+          
+          if (data.productionCapacity) {
+            updateData.supplierProfile.productionCapacity = data.productionCapacity;
+          }
+          
+          if (data.certifications && data.certifications.length > 0) {
+            updateData.supplierProfile.certifications = data.certifications;
+          }
+        }
         break;
 
-      case 5: // Finalization
+      case 4: // Purchasing/Product Information (Optional)
+        if (role === 'buyer') {
+          updateData.buyerProfile = {
+            ...user.buyerProfile
+          };
+          
+          // Only save if data is provided
+          if (data.productCategories && data.productCategories.length > 0) {
+            updateData.buyerProfile.productCategories = data.productCategories;
+          }
+          
+          if (data.budgetRange) {
+            updateData.buyerProfile.budgetRange = data.budgetRange;
+          }
+          
+          if (data.orderFrequency) {
+            updateData.buyerProfile.orderFrequency = data.orderFrequency;
+          }
+          
+          if (data.preferredSuppliers && data.preferredSuppliers.length > 0) {
+            updateData.buyerProfile.preferredSuppliers = data.preferredSuppliers;
+          }
+        } else if (role === 'supplier') {
+          updateData.supplierProfile = {
+            ...user.supplierProfile
+          };
+          
+          // Only save if data is provided
+          if (data.productCategories && data.productCategories.length > 0) {
+            updateData.supplierProfile.productCategories = data.productCategories;
+          }
+          
+          if (data.minOrderQuantity) {
+            updateData.supplierProfile.minOrderQuantity = data.minOrderQuantity;
+          }
+          
+          if (data.productionCapacity) {
+            updateData.supplierProfile.productionCapacity = data.productionCapacity;
+          }
+          
+          if (data.shippingMethods && data.shippingMethods.length > 0) {
+            updateData.supplierProfile.shippingMethods = data.shippingMethods;
+          }
+        }
+        break;
+
+      case 5: // Payment Terms & Finalization (Optional)
         updateData = {
-          isProfileComplete: true,
+          profileSetupCompleted: true,
           setupCompletedAt: new Date()
         };
+        
+        if (role === 'buyer') {
+          updateData.buyerProfile = {
+            ...user.buyerProfile
+          };
+          
+          // Only save if data is provided
+          if (data.paymentTerms) {
+            updateData.buyerProfile.paymentTerms = data.paymentTerms;
+          }
+          
+          if (data.creditLimit) {
+            updateData.buyerProfile.creditLimit = data.creditLimit;
+          }
+        } else if (role === 'supplier') {
+          updateData.supplierProfile = {
+            ...user.supplierProfile
+          };
+          
+          // Only save if data is provided
+          if (data.paymentTerms) {
+            updateData.supplierProfile.paymentTerms = data.paymentTerms;
+          }
+          
+          if (data.minimumOrder) {
+            updateData.supplierProfile.minimumOrder = data.minimumOrder;
+          }
+        }
         break;
 
       default:
@@ -97,10 +236,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the user
-    Object.assign(user, updateData);
-    user.updatedAt = new Date();
+    console.log('Updating user with data:', JSON.stringify(updateData, null, 2));
     
-    await user.save();
+    try {
+      Object.assign(user, updateData);
+      user.updatedAt = new Date();
+      
+      await user.save();
+      console.log('User updated successfully');
+    } catch (saveError) {
+      console.error('Error saving user:', saveError);
+      throw saveError;
+    }
 
     // Remove password from response
     const userResponse = user.toObject();
@@ -114,6 +261,29 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error("Profile setup error:", error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      // Check for specific MongoDB/Mongoose errors
+      if (error.name === 'ValidationError') {
+        return NextResponse.json({ 
+          error: "Validation failed: " + error.message 
+        }, { status: 400 });
+      }
+      
+      if (error.name === 'CastError') {
+        return NextResponse.json({ 
+          error: "Invalid data format: " + error.message 
+        }, { status: 400 });
+      }
+      
+      // For development, show the actual error message
+      return NextResponse.json({ 
+        error: `Setup error: ${error.message}`,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      }, { status: 500 });
+    }
+    
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import { useCart } from '../../../contexts/CartContext';
 import { useToast } from '../../../components/Toast';
 import PageLayout from '../../../components/PageLayout';
@@ -22,7 +23,6 @@ import {
   FiShare2,
   FiMaximize2,
   FiX,
-  FiTool,
   FiMinus,
   FiPlus
 } from 'react-icons/fi';
@@ -275,6 +275,9 @@ export default function ProductDetailPage() {
           throw new Error('Product not found');
         }
         const data = await response.json();
+        console.log('Fetched product data:', data);
+        console.log('Product images from API:', data.images);
+        console.log('Product img from API:', data.img);
         setProduct(data);
         
         // Set initial quantity
@@ -461,11 +464,38 @@ export default function ProductDetailPage() {
                 {/* Main Image with Advanced Features */}
                 <div className="relative bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
                   <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 relative group cursor-zoom-in">
-                    <img
-                      src={product.images?.[selectedImageIndex] || '/api/placeholder/800/800'}
-                      alt={product.title}
-                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
-                    />
+                    {(() => {
+                      const imageUrl = product.images?.[selectedImageIndex] || product.img;
+                      console.log('Product images:', product.images);
+                      console.log('Selected image URL:', imageUrl);
+                      console.log('Selected index:', selectedImageIndex);
+                      
+                      if (imageUrl && imageUrl.trim() !== '') {
+                        return (
+                          <Image
+                            src={imageUrl}
+                            alt={product.title}
+                            width={800}
+                            height={800}
+                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                            priority
+                            onError={(e) => {
+                              console.log('Image load error:', e);
+                            }}
+                          />
+                        );
+                      } else {
+                        return (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500">
+                            <div className="text-center">
+                              <div className="text-4xl mb-2">📷</div>
+                              <div className="text-sm">No Image Available</div>
+                              <div className="text-xs mt-1">Debug: {JSON.stringify({images: product.images, img: product.img})}</div>
+                            </div>
+                          </div>
+                        );
+                      }
+                    })()}
                     
                     {/* Navigation Arrows */}
                     {product.images && product.images.length > 1 && (
@@ -527,11 +557,19 @@ export default function ProductDetailPage() {
                             : 'hover:border-orange-300 hover:shadow-md hover:scale-102'
                         }`}
                       >
-                        <img
-                          src={image}
-                          alt={`${product.title} ${index + 1}`}
-                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                        />
+                        {image ? (
+                          <Image
+                            src={image}
+                            alt={`${product.title} ${index + 1}`}
+                            width={120}
+                            height={120}
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
+                            <div className="text-xs">📷</div>
+                          </div>
+                        )}
                         {selectedImageIndex === index && (
                           <div className="absolute inset-0 bg-orange-500/20 rounded-xl" />
                         )}

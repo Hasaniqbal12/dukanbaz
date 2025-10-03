@@ -1,6 +1,7 @@
 "use client";
 import Head from "next/head";
 import { useState, useEffect } from "react";
+import DashboardSidebar from '../../../components/DashboardSidebar';
 import {
   FiDollarSign,
   FiTrendingUp,
@@ -159,6 +160,7 @@ export default function EarningsPage() {
   const [withdrawError, setWithdrawError] = useState("");
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -214,13 +216,19 @@ export default function EarningsPage() {
       <Head>
         <title>Earnings – WholesaleHub</title>
       </Head>
-      <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 transition-all duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-50 flex">
+        <DashboardSidebar 
+          sidebarOpen={sidebarOpen} 
+          setSidebarOpen={setSidebarOpen} 
+          userRole="supplier" 
+        />
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold text-gray-900">Earnings Dashboard</h1>
                 <p className="text-gray-600">Track your revenue, manage payouts, and analyze performance</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -596,13 +604,15 @@ export default function EarningsPage() {
                     <FiDollarSign className="w-8 h-8 text-purple-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-purple-600">$1,245</div>
                     <div className="text-sm text-gray-600">Avg. Monthly Earnings</div>
-            </div>
-            </div>
+                  </div>
+                </div>
               </div>
-              </div>
-            )}
+            </div>
+          )}
+            </div>
+          </div>
         </div>
       </div>
     </>
   );
-} 
+}

@@ -9,7 +9,7 @@ import BidManagement from '../../components/BidManagement';
 import ImageUpload from '../../components/ImageUpload';
 import { 
   FiSearch, FiEye, FiDollarSign, FiCalendar, FiMapPin, FiTrendingUp, FiPlus, FiSettings, FiX,
-  FiCheckCircle, FiAlertCircle, FiBarChart, FiPackage, FiSend
+  FiCheckCircle, FiAlertCircle, FiBarChart, FiPackage, FiSend, FiFilter, FiMoreHorizontal, FiClock, FiTag, FiUsers
   } from 'react-icons/fi';
 
 interface Request {
@@ -540,18 +540,6 @@ export default function RequestsPage() {
                   </button>
                 )}
                 
-                {!session?.user && (
-                  <a
-                    href="/signin"
-                    className="group bg-white text-indigo-600 hover:bg-gray-50 px-6 py-3 sm:px-8 sm:py-4 rounded-lg sm:rounded-xl font-medium inline-flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border border-gray-200"
-                  >
-                    <FiSettings className="w-5 h-5" />
-                    <span>Sign In to Get Started</span>
-                    <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </a>
-                )}
                 
                 {session?.user && (session.user as { role?: string }).role === 'buyer' && (
                   <a
@@ -571,347 +559,395 @@ export default function RequestsPage() {
         </div>
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-6 lg:py-8">
-          {/* Modern Filters Section - Compact on Mobile */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8 mb-4 sm:mb-8">
-            
-            
-            {/* Mobile Filter Toggle - More Compact */}
-            <div className="block md:hidden mb-4">
-              <button
-                onClick={() => setShowMobileFilters(!showMobileFilters)}
-                className="w-full flex items-center justify-between bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2.5 rounded-lg font-medium transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <FiSettings className="w-5 h-5" />
-                  <span>Filter Requests</span>
-                  <span className="bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full text-xs font-bold">
+          {/* Mobile Filter Button */}
+          <div className="block lg:hidden mb-4">
+            <button
+              onClick={() => setShowMobileFilters(true)}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors shadow-lg"
+            >
+              <FiFilter className="w-5 h-5" />
+              <span>Filter</span>
+              <span className="bg-indigo-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                {filteredRequests.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Main Layout with Sidebar */}
+          <div className="flex gap-6">
+            {/* Left Sidebar - Filters */}
+            <div className="hidden lg:block w-80 flex-shrink-0">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sticky top-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <FiFilter className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-lg font-bold text-gray-900">Filter Requests</h3>
+                  <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-bold ml-auto">
                     {filteredRequests.length}
                   </span>
                 </div>
-                <svg 
-                  className={`w-5 h-5 transition-transform duration-200 ${showMobileFilters ? 'rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            </div>
 
-            {/* Desktop Filters - Always Visible */}
-            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {/* Enhanced Search */}
-              <div className="relative md:col-span-2 lg:col-span-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Search Requests</label>
-                <div className="relative">
-                  <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search products, descriptions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 placeholder-gray-500 bg-gray-50 focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Category Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Category</label>
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
-                >
-                  <option value="All">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-              </div>
-
-              {/* Urgency Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Priority Level</label>
-                <select
-                  value={urgencyFilter}
-                  onChange={(e) => setUrgencyFilter(e.target.value)}
-                  className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
-                >
-                  <option value="All">All Urgency</option>
-                  <option value="Low">Low Priority</option>
-                  <option value="Medium">Medium Priority</option>
-                  <option value="High">High Priority</option>
-                  <option value="Urgent">Urgent</option>
-          </select>
-        </div>
-
-              {/* Status Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Request Status</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
-                >
-                  <option value="All">All Status</option>
-                  <option value="open">Open</option>
-                  <option value="closed">Closed</option>
-                  <option value="fulfilled">Fulfilled</option>
-                </select>
-              </div>
-
-              {/* Budget Min */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Min Budget (₨)</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={budgetMin}
-                  onChange={(e) => setBudgetMin(e.target.value)}
-                  placeholder="e.g. 1000"
-                  className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
-                />
-              </div>
-
-              {/* Max Budget */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Max Budget (₨)</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={budgetMax}
-                  onChange={(e) => setBudgetMax(e.target.value)}
-                  placeholder="e.g. 50000"
-                  className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
-                />
-              </div>
-
-              {/* Sort */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Sort By</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="price-high">Highest Budget</option>
-                  <option value="price-low">Lowest Budget</option>
-
-                  <option value="views">Most Viewed</option>
-                </select>
-              </div>
-              
-              {/* Desktop checkboxes */}
-              <div className="md:col-span-2 lg:col-span-4">
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                  {/* Only with images */}
-                  <div className="flex items-center">
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <div className="space-y-6">
+                  {/* Search */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Search Requests</label>
+                    <div className="relative">
+                      <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
-                        type="checkbox"
-                        checked={onlyWithImages}
-                        onChange={(e) => setOnlyWithImages(e.target.checked)}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                        type="text"
+                        placeholder="Search products, descriptions..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 placeholder-gray-500 bg-gray-50 focus:bg-white"
                       />
-                      Only with images
-                    </label>
+                    </div>
                   </div>
-                  
-                  {/* Supplier: Hide requests I have bid on */}
-                  {(session?.user as { role?: string })?.role === 'supplier' && (
+
+                  {/* Category Filter */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Category</label>
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
+                    >
+                      <option value="All">All Categories</option>
+                      {categories.map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Priority Filter */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Priority Level</label>
+                    <select
+                      value={urgencyFilter}
+                      onChange={(e) => setUrgencyFilter(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
+                    >
+                      <option value="All">All Urgency</option>
+                      <option value="Low">Low Priority</option>
+                      <option value="Medium">Medium Priority</option>
+                      <option value="High">High Priority</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+
+                  {/* Status Filter */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Request Status</label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
+                    >
+                      <option value="All">All Status</option>
+                      <option value="open">Open</option>
+                      <option value="closed">Closed</option>
+                      <option value="fulfilled">Fulfilled</option>
+                    </select>
+                  </div>
+
+                  {/* Budget Range */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Budget Range (₨)</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={budgetMin}
+                        onChange={(e) => setBudgetMin(e.target.value)}
+                        placeholder="Min"
+                        className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
+                      />
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={budgetMax}
+                        onChange={(e) => setBudgetMax(e.target.value)}
+                        placeholder="Max"
+                        className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Sort */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Sort By</label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-gray-50 focus:bg-white"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="price-high">Highest Budget</option>
+                      <option value="price-low">Lowest Budget</option>
+                      <option value="views">Most Viewed</option>
+                    </select>
+                  </div>
+
+                  {/* Checkboxes */}
+                  <div className="space-y-3">
                     <div className="flex items-center">
                       <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={hideBidOn}
-                          onChange={(e) => setHideBidOn(e.target.checked)}
+                          checked={onlyWithImages}
+                          onChange={(e) => setOnlyWithImages(e.target.checked)}
                           className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
                         />
-                        Hide requests I have bid on
+                        Only with images
                       </label>
                     </div>
-                  )}
+                    
+                    {(session?.user as { role?: string })?.role === 'supplier' && (
+                      <div className="flex items-center">
+                        <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hideBidOn}
+                            onChange={(e) => setHideBidOn(e.target.checked)}
+                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                          />
+                          Hide requests I have bid on
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Clear Filters Button */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <button
+                      onClick={() => {
+                        setSearchTerm("");
+                        setCategoryFilter("All");
+                        setUrgencyFilter("All");
+                        setStatusFilter("open");
+                        setBudgetMin("");
+                        setBudgetMax("");
+                        setSortBy("newest");
+                        setOnlyWithImages(false);
+                        setHideBidOn(false);
+                      }}
+                      className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-xl font-medium transition-colors"
+                    >
+                      Clear All Filters
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Mobile Collapsible Filters */}
-            <div className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
-              showMobileFilters ? 'max-h-screen opacity-100 mb-8' : 'max-h-0 opacity-0'
-            }`}>
-              <div className="bg-gray-50 rounded-xl p-4 space-y-4">
-                {/* Mobile Search */}
-                <div className="relative">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Search Requests</label>
-                  <div className="relative">
-                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      placeholder="Search products, descriptions..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 placeholder-gray-500 bg-white"
-                    />
-                  </div>
-                </div>
+            {/* Right Content Area */}
+            <div className="flex-1 min-w-0">
 
-                {/* Mobile Category */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
-                  >
-                    <option value="All">All Categories</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Mobile Priority */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Priority Level</label>
-                  <select
-                    value={urgencyFilter}
-                    onChange={(e) => setUrgencyFilter(e.target.value)}
-                    className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
-                  >
-                    <option value="All">All Urgency</option>
-                    <option value="Low">Low Priority</option>
-                    <option value="Medium">Medium Priority</option>
-                    <option value="High">High Priority</option>
-                    <option value="Urgent">Urgent</option>
-                  </select>
-                </div>
-
-                {/* Mobile Status */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Request Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
-                  >
-                    <option value="All">All Status</option>
-                    <option value="open">Open</option>
-                    <option value="closed">Closed</option>
-                    <option value="fulfilled">Fulfilled</option>
-                  </select>
-                </div>
-
-                {/* Mobile Budget Range */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Min Budget (₨)</label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      value={budgetMin}
-                      onChange={(e) => setBudgetMin(e.target.value)}
-                      placeholder="1000"
-                      className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Max Budget (₨)</label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      value={budgetMax}
-                      onChange={(e) => setBudgetMax(e.target.value)}
-                      placeholder="50000"
-                      className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
-                    />
-                  </div>
-                </div>
-
-                {/* Mobile Sort */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Sort By</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
-                  >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="price-high">Highest Budget</option>
-                    <option value="price-low">Lowest Budget</option>
-                    <option value="views">Most Viewed</option>
-                  </select>
-                </div>
-
-                {/* Mobile Checkboxes */}
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center">
-                    <label className="inline-flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={onlyWithImages}
-                        onChange={(e) => setOnlyWithImages(e.target.checked)}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-5 h-5"
-                      />
-                      Only show requests with images
-                    </label>
+            {/* Mobile Filter Slide-out Panel */}
+            {showMobileFilters && (
+              <>
+                {/* Backdrop */}
+                <div 
+                  className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                  onClick={() => setShowMobileFilters(false)}
+                ></div>
+                
+                {/* Slide-out Panel */}
+                <div className={`fixed top-0 left-0 h-full w-80 bg-white z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
+                  showMobileFilters ? 'translate-x-0' : '-translate-x-full'
+                } shadow-2xl`}>
+                  {/* Panel Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-indigo-600 text-white">
+                    <div className="flex items-center gap-2">
+                      <FiFilter className="w-5 h-5" />
+                      <h3 className="text-lg font-semibold">Filter Requests</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowMobileFilters(false)}
+                      className="p-2 hover:bg-indigo-700 rounded-lg transition-colors"
+                    >
+                      <FiX className="w-5 h-5" />
+                    </button>
                   </div>
                   
-                  {(session?.user as { role?: string })?.role === 'supplier' && (
-                    <div className="flex items-center">
-                      <label className="inline-flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={hideBidOn}
-                          onChange={(e) => setHideBidOn(e.target.checked)}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-5 h-5"
-                        />
-                        Hide requests I have already bid on
-                      </label>
+                  {/* Panel Content */}
+                  <div className="p-4 h-full overflow-y-auto pb-20">
+                    <div className="space-y-6">
+                      {/* Results Count */}
+                      <div className="bg-indigo-50 p-3 rounded-lg">
+                        <p className="text-indigo-700 font-medium text-center">
+                          {filteredRequests.length} requests found
+                        </p>
+                      </div>
+
+                      {/* Mobile Search */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Search Requests</label>
+                        <div className="relative">
+                          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                          <input
+                            type="text"
+                            placeholder="Search products, descriptions..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 placeholder-gray-500 bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Mobile Category */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                        <select
+                          value={categoryFilter}
+                          onChange={(e) => setCategoryFilter(e.target.value)}
+                          className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
+                        >
+                          <option value="All">All Categories</option>
+                          {categories.map(category => (
+                            <option key={category} value={category}>{category}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Mobile Priority */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Priority Level</label>
+                        <select
+                          value={urgencyFilter}
+                          onChange={(e) => setUrgencyFilter(e.target.value)}
+                          className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
+                        >
+                          <option value="All">All Urgency</option>
+                          <option value="Low">Low Priority</option>
+                          <option value="Medium">Medium Priority</option>
+                          <option value="High">High Priority</option>
+                          <option value="Urgent">Urgent</option>
+                        </select>
+                      </div>
+
+                      {/* Mobile Status */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Request Status</label>
+                        <select
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
+                        >
+                          <option value="All">All Status</option>
+                          <option value="open">Open</option>
+                          <option value="closed">Closed</option>
+                          <option value="fulfilled">Fulfilled</option>
+                        </select>
+                      </div>
+
+                      {/* Mobile Budget Range */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Min Budget (₨)</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            value={budgetMin}
+                            onChange={(e) => setBudgetMin(e.target.value)}
+                            placeholder="1000"
+                            className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Max Budget (₨)</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            value={budgetMax}
+                            onChange={(e) => setBudgetMax(e.target.value)}
+                            placeholder="50000"
+                            className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Mobile Sort */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Sort By</label>
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value as SortOption)}
+                          className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900 bg-white"
+                        >
+                          <option value="newest">Newest First</option>
+                          <option value="oldest">Oldest First</option>
+                          <option value="price-high">Highest Budget</option>
+                          <option value="price-low">Lowest Budget</option>
+                          <option value="views">Most Viewed</option>
+                        </select>
+                      </div>
+
+                      {/* Mobile Checkboxes */}
+                      <div className="space-y-3">
+                        <div className="flex items-center">
+                          <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={onlyWithImages}
+                              onChange={(e) => setOnlyWithImages(e.target.checked)}
+                              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                            />
+                            Only with images
+                          </label>
+                        </div>
+                        
+                        {(session?.user as { role?: string })?.role === 'supplier' && (
+                          <div className="flex items-center">
+                            <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={hideBidOn}
+                                onChange={(e) => setHideBidOn(e.target.checked)}
+                                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                              />
+                              Hide requests I have bid on
+                            </label>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Clear Filters Button */}
+                      <div className="pt-4">
+                        <button
+                          onClick={() => {
+                            setSearchTerm("");
+                            setCategoryFilter("All");
+                            setUrgencyFilter("All");
+                            setStatusFilter("open");
+                            setBudgetMin("");
+                            setBudgetMax("");
+                            setSortBy("newest");
+                            setOnlyWithImages(false);
+                            setHideBidOn(false);
+                          }}
+                          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium transition-colors"
+                        >
+                          Clear All Filters
+                        </button>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
+              </>
+            )}
 
-                {/* Mobile Clear Filters Button */}
-                <div className="pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => {
-                      setSearchTerm('');
-                      setCategoryFilter('All');
-                      setUrgencyFilter('All');
-                      setStatusFilter('All');
-                      setBudgetMin('');
-                      setBudgetMax('');
-                      setSortBy('newest');
-                      setOnlyWithImages(false);
-                      setHideBidOn(false);
-                    }}
-                    className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    <FiX className="w-4 h-4" />
-                    Clear All Filters
-                  </button>
+              {/* Results Info */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-6">
+                <div className="text-sm text-gray-600 order-2 sm:order-1">
+                  Showing {filteredRequests.length} active request{filteredRequests.length !== 1 ? 's' : ''}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 order-1 sm:order-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span>Live Requests</span>
                 </div>
               </div>
-            </div>
 
-            {/* Results Info */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-              <div className="text-sm text-gray-600 order-2 sm:order-1">
-                Showing {filteredRequests.length} active request{filteredRequests.length !== 1 ? 's' : ''}
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500 order-1 sm:order-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Live Requests</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Content */}
+              {/* Content */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <FiTrendingUp className="w-8 h-8 animate-spin text-blue-600" />
@@ -944,207 +980,198 @@ export default function RequestsPage() {
             </div>
           ) : (
             <>
-              {/* Project Requests - Compact Mobile Style */}
-              <div className="space-y-3 sm:space-y-6">
+              {/* Social Media Style Request Cards */}
+              <div className="space-y-4 sm:space-y-6">
                 {filteredRequests.map((request) => (
                   <div
                     key={request._id}
-                    className="bg-white rounded-lg sm:rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group relative"
+                    className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden"
                   >
-                    {/* Project Header - Compact Mobile */}
-                    <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 px-3 sm:px-6 py-2 sm:py-4 border-b border-gray-100">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
-                        <div className="flex items-start gap-2 sm:gap-4">
-                          {/* Buyer Avatar - Smaller on Mobile */}
-                          <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm sm:text-lg flex-shrink-0">
+                    {/* Card Header - Social Media Style */}
+                    <div className="p-4 sm:p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start gap-3">
+                          {/* User Avatar */}
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 ring-2 ring-white shadow-lg">
                             {request.buyerName?.charAt(0) || 'B'}
                           </div>
                           
-                          {/* Project Info - Compact */}
+                          {/* User Info */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1 sm:mb-1">
-                              <h3 className="text-base sm:text-xl font-bold text-gray-900 hover:text-indigo-600 cursor-pointer transition-colors">
-                                {request.productName}
-                              </h3>
-                              <span className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getUrgencyColor(request.urgency)} self-start sm:self-auto`}>
-                                {request.urgency.toUpperCase()}
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-bold text-gray-900 text-sm">
+                                {request.buyerName}
+                              </h4>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                                {request.status.replace('_', ' ').charAt(0).toUpperCase() + request.status.replace('_', ' ').slice(1)}
                               </span>
                             </div>
-                            
-                            <div className="flex flex-wrap items-center gap-1 sm:gap-4 text-xs text-gray-600">
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
                               <div className="flex items-center gap-1">
-                                <span className="font-medium text-gray-700">by {request.buyerName}</span>
+                                <FiClock className="w-3 h-3" />
+                                <span>{new Date(request.createdAt).toLocaleDateString()}</span>
                               </div>
                               <div className="flex items-center gap-1">
                                 <FiMapPin className="w-3 h-3" />
-                                <span className="truncate max-w-[80px] sm:max-w-none">{request.location}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <FiCalendar className="w-3 h-3" />
-                                <span>{new Date(request.createdAt).toLocaleDateString()}</span>
+                                <span className="truncate max-w-[100px]">{request.location}</span>
                               </div>
                             </div>
                           </div>
                         </div>
                         
-                        {/* Status Badge - Compact Mobile */}
-                        <div className="flex items-center justify-between sm:justify-start gap-2">
-                          <span className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
-                            {request.status.replace('_', ' ').charAt(0).toUpperCase() + request.status.replace('_', ' ').slice(1)}
+                        {/* More Options */}
+                        <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                          <FiMoreHorizontal className="w-5 h-5 text-gray-400" />
+                        </button>
+                      </div>
+
+                      {/* Post Content */}
+                      <div className="mb-4">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 hover:text-indigo-600 cursor-pointer transition-colors">
+                          Looking for: {request.productName}
+                        </h3>
+                        <p className="text-gray-700 leading-relaxed text-sm mb-3">
+                          {request.description}
+                        </p>
+                        
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                            <FiTag className="w-3 h-3" />
+                            {request.category}
                           </span>
-                          <div className="text-right hidden sm:block">
-                            <div className="text-xs text-gray-500">Project ID</div>
-                            <div className="text-xs sm:text-sm font-mono text-gray-700">#{request.requestNumber}</div>
-                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getUrgencyColor(request.urgency)}`}>
+                            {request.urgency.toUpperCase()} PRIORITY
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Project Content - Compact Mobile */}
-                    <div className="p-3 sm:p-6">
-                      <div className="grid lg:grid-cols-3 gap-3 sm:gap-6">
-                        {/* Left: Project Details */}
-                        <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-                          {/* Description - Full Text */}
-                          <div>
-                            <h4 className="font-semibold text-gray-900 mb-1 sm:mb-2 text-sm">Description</h4>
-                            <p className="text-gray-700 leading-relaxed text-sm">
-                              {request.description}
-                            </p>
-                          </div>
-                          
-                          {/* Requirements Grid - Compact Mobile */}
-                          <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                            <div className="bg-blue-50 rounded-lg p-2 sm:p-4">
-                              <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                                <FiPackage className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                                <span className="font-medium text-blue-900 text-xs sm:text-sm">Quantity</span>
-                              </div>
-                              <div className="text-lg sm:text-2xl font-bold text-blue-700">
-                                {request.quantity.toLocaleString()} {request.unit}
-                              </div>
-                            </div>
-                            
-                            <div className="bg-green-50 rounded-lg p-2 sm:p-4">
-                              <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                                <FiDollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                                <span className="font-medium text-green-900 text-xs sm:text-sm">Budget</span>
-                              </div>
-                              <div className="text-sm sm:text-lg font-bold text-green-700">
-                                ₨{(request.targetPrice || 0).toLocaleString()}
-                                {request.maxBudget && request.maxBudget !== request.targetPrice && (
-                                  <span className="text-xs sm:text-sm font-normal block sm:inline"> - ₨{request.maxBudget.toLocaleString()}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Category - Compact */}
-                          <div className="flex items-center gap-2">
-                            <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-md text-xs font-medium">
-                              {request.category}
-                            </span>
-                          </div>
-                          
-                          {/* Reference Images - More Compact */}
-                          {request.attachments && request.attachments.length > 0 && (
-                            <div>
-                              <h4 className="font-medium text-gray-900 mb-1 text-xs">Images ({request.attachments.length})</h4>
-                              <div className="flex gap-1 overflow-x-auto">
-                                {request.attachments.slice(0, 3).map((imageUrl, index) => (
-                                  <div key={index} className="w-12 h-12 sm:w-16 sm:h-16 rounded-md overflow-hidden border border-gray-200 flex-shrink-0">
-                                    <Image
-                                      src={imageUrl}
-                                      alt={`Ref ${index + 1}`}
-                                      width={64}
-                                      height={64}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                      }}
-                                    />
-                                  </div>
-                                ))}
-                                {request.attachments.length > 3 && (
-                                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs font-medium text-gray-600">
-                                      +{request.attachments.length - 3}
+                      {/* Reference Images - Instagram Style */}
+                      {request.attachments && request.attachments.length > 0 && (
+                        <div className="mb-4">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-xl overflow-hidden">
+                            {request.attachments.slice(0, 6).map((imageUrl, index) => (
+                              <div key={index} className="aspect-square relative overflow-hidden bg-gray-100">
+                                <Image
+                                  src={imageUrl}
+                                  alt={`Reference ${index + 1}`}
+                                  fill
+                                  className="object-cover hover:scale-105 transition-transform duration-300"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                                {index === 5 && request.attachments.length > 6 && (
+                                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                    <span className="text-white font-bold text-lg">
+                                      +{request.attachments.length - 5}
                                     </span>
                                   </div>
                                 )}
                               </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Requirements Cards */}
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FiPackage className="w-5 h-5 text-blue-600" />
+                            <span className="font-medium text-blue-900 text-sm">Quantity Needed</span>
+                          </div>
+                          <div className="text-xl font-bold text-blue-700">
+                            {request.quantity.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-blue-600 font-medium">
+                            {request.unit}
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FiDollarSign className="w-5 h-5 text-green-600" />
+                            <span className="font-medium text-green-900 text-sm">Budget Range</span>
+                          </div>
+                          <div className="text-lg font-bold text-green-700">
+                            ₨{(request.targetPrice || 0).toLocaleString()}
+                          </div>
+                          {request.maxBudget && request.maxBudget !== request.targetPrice && (
+                            <div className="text-xs text-green-600 font-medium">
+                              Max: ₨{request.maxBudget.toLocaleString()}
                             </div>
                           )}
                         </div>
-                        
-                        {/* Right: Project Stats & Actions - Ultra Compact */}
-                        <div className="space-y-2 sm:space-y-4">
-                          {/* Project Stats - Minimal */}
-                          <div className="bg-gray-50 rounded-lg p-2 sm:p-4">
-                            <div className="grid grid-cols-2 gap-2 text-center">
-                              <div>
-                                <div className="text-lg font-bold text-gray-900">{request.viewCount || 0}</div>
-                                <div className="text-xs text-gray-500">Views</div>
-                              </div>
-                              <div>
-                                <div className="text-lg font-bold text-indigo-600">{request.bidCount || 0}</div>
-                                <div className="text-xs text-gray-500">Bids</div>
-                              </div>
-                            </div>
-                            <div className="mt-2 pt-2 border-t border-gray-200 text-center">
-                              <div className="text-xs text-gray-500">Deadline: {new Date(request.expiresAt).toLocaleDateString()}</div>
-                            </div>
-                          </div>
-                          
-                          {/* Action Buttons - Compact */}
-                          <div className="space-y-2">
-                            {/* Supplier Actions */}
-                            {(session?.user as { role?: string })?.role === 'supplier' && (request.status === 'open' || request.status === 'bidding') && (
-                              <div>
-                                {!supplierBids.includes(request._id) ? (
-                                  <button
-                                    onClick={() => openBidModal(request)}
-                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 text-sm"
-                                  >
-                                    <FiSend className="w-4 h-4" />
-                                    Send Proposal
-                                  </button>
-                                ) : (
-                                  <div className="w-full bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 border border-green-200 text-sm">
-                                    <FiCheckCircle className="w-4 h-4" />
-                                    Proposal Sent
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                      </div>
 
-                            {/* Buyer Actions */}
-                            {session?.user && session.user.email === request.buyerEmail && (
-                              <div>
-                                <button
-                                  onClick={() => openBidManagement(request)}
-                                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 text-sm"
-                                >
-                                  <FiEye className="w-4 h-4" />
-                                  View Proposals ({request.bidCount || 0})
-                                </button>
-                              </div>
-                            )}
-                            
-                            {/* Guest/Other Users */}
-                            {!session?.user && (
-                              <div>
-                                <a
-                                  href="/signin"
-                                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm"
-                                >
-                                  <FiSettings className="w-4 h-4" />
-                                  Sign in to Bid
-                                </a>
-                              </div>
-                            )}
+                      {/* Deadline Alert */}
+                      <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <FiClock className="w-4 h-4 text-orange-600" />
+                          <span className="text-sm font-medium text-orange-800">
+                            Deadline: {new Date(request.expiresAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Social Media Actions Bar */}
+                    <div className="border-t border-gray-100 px-4 sm:px-6 py-3">
+                      <div className="flex items-center justify-between mb-3">
+                        {/* Engagement Stats */}
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <FiEye className="w-4 h-4" />
+                            <span>{request.viewCount || 0} views</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <FiUsers className="w-4 h-4" />
+                            <span>{request.bidCount || 0} proposals</span>
                           </div>
                         </div>
+                        
+                        {/* Request ID */}
+                        <div className="text-xs text-gray-500 font-mono">
+                          #{request.requestNumber}
+                        </div>
+                      </div>
+
+                      {/* Main Action Buttons */}
+                      <div>
+                        {/* Supplier Actions */}
+                        {(session?.user as { role?: string })?.role === 'supplier' && (request.status === 'open' || request.status === 'bidding') && (
+                          <div>
+                            {!supplierBids.includes(request._id) ? (
+                              <button
+                                onClick={() => openBidModal(request)}
+                                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                              >
+                                <FiSend className="w-5 h-5" />
+                                Send Proposal
+                              </button>
+                            ) : (
+                              <div className="w-full bg-green-100 text-green-800 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 border border-green-200">
+                                <FiCheckCircle className="w-5 h-5" />
+                                Proposal Sent
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Buyer Actions */}
+                        {session?.user && session.user.email === request.buyerEmail && (
+                          <div>
+                            <button
+                              onClick={() => openBidManagement(request)}
+                              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                            >
+                              <FiEye className="w-5 h-5" />
+                              View Proposals ({request.bidCount || 0})
+                            </button>
+                          </div>
+                        )}
+                        
                       </div>
                     </div>
                   </div>
@@ -1594,6 +1621,9 @@ export default function RequestsPage() {
             </div>
           </div>
         )}
-    </PageLayout>
+            </div>
+          </div>
+        
+      </PageLayout>
   );
 } 

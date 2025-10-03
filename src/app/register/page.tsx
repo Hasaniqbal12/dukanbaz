@@ -3,6 +3,7 @@
 import Head from "next/head";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { 
   FiUser, 
   FiMail, 
@@ -112,17 +113,34 @@ export default function Register() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      setSuccess("Account created successfully! Redirecting to profile setup...");
-      setIsLoading(false);
+      const roleText = form.role === 'supplier' ? 'Supplier' : 'Buyer';
+      setSuccess(`🎉 Welcome to WholesaleHub! Your ${roleText.toLowerCase()} account has been created successfully. Signing you in and redirecting to complete your profile setup...`);
       
-      // Redirect to appropriate setup page based on role
-      setTimeout(() => {
-        if (form.role === 'supplier') {
-          router.push('/profile/supplier-setup');
-        } else {
-          router.push('/profile/buyer-setup');
-        }
-      }, 2000);
+      // Automatically sign in the user after successful registration
+      const signInResult = await signIn('credentials', {
+        email: form.email,
+        password: form.password,
+        redirect: false,
+      });
+
+      if (signInResult?.ok) {
+        // Wait a moment for the session to be established
+        setTimeout(() => {
+          if (form.role === 'supplier') {
+            router.push('/profile/supplier-setup?welcome=true');
+          } else {
+            router.push('/profile/buyer-setup?welcome=true');
+          }
+        }, 2000);
+      } else {
+        // If auto sign-in fails, redirect to sign-in page
+        setSuccess(`Account created successfully! Please sign in to continue.`);
+        setTimeout(() => {
+          router.push('/signin');
+        }, 2000);
+      }
+      
+      setIsLoading(false);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Registration failed');
       setIsLoading(false);

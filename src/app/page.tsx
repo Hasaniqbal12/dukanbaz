@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from 'react';
-import { FiStar, FiSearch, FiShield, FiTruck, FiGlobe, FiArrowRight, FiUsers, FiChevronLeft, FiChevronRight, FiEdit3 } from 'react-icons/fi';
+import {  FiSearch, FiShield, FiTruck, FiGlobe, FiArrowRight, FiUsers, FiChevronLeft, FiChevronRight, FiEdit3 } from 'react-icons/fi';
 import { useSession } from 'next-auth/react';
 import PageLayout from '../components/PageLayout';
 
@@ -67,49 +67,108 @@ export default function Home() {
   const [newProducts, setNewProducts] = useState<Product[]>([]);
   const [forYouProducts, setForYouProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [randomProducts, setRandomProducts] = useState<Product[]>([]);
   const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/products?limit=20&sort=createdAt&order=desc');
-        const data = await response.json();
+        console.log('🔄 Fetching products from API...');
         
-        if (data.success && data.products) {
-          // Transform API data to match component interface
-          interface ApiProduct {
-            _id: string;
-            title: string;
-            images?: string[];
-            price: number;
-            originalPrice?: number;
-            minimumOrderQuantity?: number;
-            supplier?: { name?: string; verified?: boolean };
-            rating?: number;
-            discount?: number;
-            createdAt: string;
-          }
-          
-          const transformedProducts = data.products.map((product: ApiProduct) => ({
-            id: product._id,
-            title: product.title,
-            img: product.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
-            price: `Rs ${product.price?.toLocaleString()}`,
-            originalPrice: product.originalPrice ? `Rs ${product.originalPrice.toLocaleString()}` : undefined,
-            moq: `${product.minimumOrderQuantity || 1} pcs`,
-            supplier: product.supplier?.name || 'Verified Supplier',
-            rating: product.rating || 4.0,
-            verified: product.supplier?.verified || false,
-            discount: product.discount,
-            isNew: new Date(product.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-          }));
-          
-          setNewProducts(transformedProducts.slice(0, 6));
-          setForYouProducts(transformedProducts.slice(6, 12));
-          setFeaturedProducts(transformedProducts);
+        // Fetch different types of products in parallel
+        const [recentResponse, recommendedResponse, featuredRandomResponse, randomResponse] = await Promise.all([
+          fetch('/api/products/featured?type=recent&limit=6'),
+          fetch('/api/products/featured?type=recommended&limit=6'),
+          fetch('/api/products/random?limit=6'), // Random products for featured section
+          fetch('/api/products/random?limit=6')   // Random products for discovery section
+        ]);
+
+        console.log('📡 API Response Status:', {
+          recent: recentResponse.status,
+          recommended: recommendedResponse.status,
+          featuredRandom: featuredRandomResponse.status,
+          random: randomResponse.status
+        });
+
+        const [recentData, recommendedData, featuredRandomData, randomData] = await Promise.all([
+          recentResponse.json(),
+          recommendedResponse.json(),
+          featuredRandomResponse.json(),
+          randomResponse.json()
+        ]);
+
+        console.log('📊 API Data:', {
+          recent: { success: recentData.success, count: recentData.products?.length || 0 },
+          recommended: { success: recommendedData.success, count: recommendedData.products?.length || 0 },
+          featuredRandom: { success: featuredRandomData.success, count: featuredRandomData.products?.length || 0 },
+          random: { success: randomData.success, count: randomData.products?.length || 0 }
+        });
+
+        // Transform API data to match component interface
+        interface ApiProduct {
+          _id: string;
+          title: string;
+          name: string;
+          images?: string[];
+          price: number;
+          originalPrice?: number;
+          comparePrice?: number;
+          minimumOrderQuantity?: number;
+          moq?: number;
+          supplier?: { 
+            name?: string; 
+            companyName?: string;
+            verified?: boolean; 
+          };
+          rating?: number;
+          discount?: number;
+          createdAt: string;
+          views?: number;
         }
+
+        const transformProduct = (product: ApiProduct) => ({
+          id: product._id,
+          title: product.title || product.name,
+          img: product.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
+          price: `Rs ${product.price?.toLocaleString()}`,
+          originalPrice: (product.originalPrice || product.comparePrice) ? 
+            `Rs ${(product.originalPrice || product.comparePrice)?.toLocaleString()}` : undefined,
+          moq: `${product.minimumOrderQuantity || product.moq || 1} pcs`,
+          supplier: product.supplier?.companyName || product.supplier?.name || 'Verified Supplier',
+          rating: product.rating || 4.0,
+          verified: product.supplier?.verified || false,
+          discount: product.discount,
+          isNew: new Date(product.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        });
+        
+        // Set products from API responses
+        if (recentData.success && recentData.products) {
+          const transformedRecent = recentData.products.map(transformProduct);
+          console.log('✨ Setting new products:', transformedRecent.length);
+          setNewProducts(transformedRecent);
+        }
+        
+        if (recommendedData.success && recommendedData.products) {
+          const transformedRecommended = recommendedData.products.map(transformProduct);
+          console.log('🎯 Setting recommended products:', transformedRecommended.length);
+          setForYouProducts(transformedRecommended);
+        }
+        
+        if (featuredRandomData.success && featuredRandomData.products) {
+          const transformedFeatured = featuredRandomData.products.map(transformProduct);
+          console.log('🏆 Setting featured products:', transformedFeatured.length);
+          setFeaturedProducts(transformedFeatured);
+        }
+        
+        if (randomData.success && randomData.products) {
+          const transformedRandom = randomData.products.map(transformProduct);
+          console.log('🎲 Setting random products:', transformedRandom.length);
+          setRandomProducts(transformedRandom);
+        }
+
       } catch (error) {
         console.error('Failed to fetch products:', error);
+        
         // Fallback to sample data
         const sampleProducts = [
           {
@@ -135,11 +194,37 @@ export default function Home() {
             verified: true,
             discount: 31,
             isNew: true,
+          },
+          {
+            id: 3,
+            title: "Wireless Bluetooth Headphones",
+            img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
+            price: "Rs 4,500",
+            originalPrice: "Rs 6,000",
+            moq: "25 pcs",
+            supplier: "Karachi Electronics Co.",
+            rating: 4.3,
+            verified: true,
+            discount: 25,
+            isNew: false,
+          },
+          {
+            id: 4,
+            title: "Premium Cotton T-Shirt",
+            img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
+            price: "Rs 1,200",
+            moq: "100 pcs",
+            supplier: "Faisalabad Textiles",
+            rating: 4.6,
+            verified: true,
+            isNew: true,
           }
         ];
+        
         setNewProducts(sampleProducts);
         setForYouProducts(sampleProducts);
         setFeaturedProducts(sampleProducts);
+        setRandomProducts(sampleProducts);
       } finally {
         setLoading(false);
       }
@@ -165,70 +250,59 @@ export default function Home() {
     }
   };
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, index) => (
-      <FiStar
-        key={index}
-        className={`w-3 h-3 ${
-          index < Math.floor(rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
-        }`}
-      />
-    ));
-  };
 
   const ProductCard = ({ product }: { product: Product }) => (
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 overflow-hidden group hover:-translate-y-1">
-      <div className="relative overflow-hidden">
-        <Image
-          src={product.img}
-          alt={product.title}
-          width={400}
-          height={280}
-          className="w-full h-32 sm:h-48 lg:h-56 object-cover group-hover:scale-110 transition-transform duration-700"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        {product.discount && (
-          <div className="absolute top-1.5 sm:top-3 left-1.5 sm:left-3 bg-gradient-to-r from-red-500 to-pink-600 text-white px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-xs font-bold shadow-lg">
-            -{product.discount}%
+    <Link href={`/product/${product.id}`} className="block">
+      <div className="bg-white hover:bg-gray-50 overflow-hidden transition-all duration-200 group cursor-pointer">
+        {/* Image Container */}
+        <div className="relative aspect-square overflow-hidden bg-gray-50">
+          <Image
+            src={product.img}
+            alt={product.title}
+            width={280}
+            height={280}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          
+          {/* Badges */}
+          {product.discount && (
+            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+              -{product.discount}%
+            </div>
+          )}
+          
+          {product.isNew && (
+            <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
+              NEW
+            </div>
+          )}
+          
+          {product.verified && (
+            <div className="absolute bottom-2 right-2 bg-blue-500 text-white p-1.5 rounded-full">
+              <FiShield className="w-3 h-3" />
+            </div>
+          )}
+        </div>
+        
+        {/* Content */}
+        <div className="p-1 space-y-1">
+          {/* Title */}
+          <h3 className="text-sm text-gray-800 line-clamp-2 leading-tight min-h-[2rem] group-hover:text-blue-600 transition-colors">
+            {product.title}
+          </h3>
+          
+          {/* Price */}
+          <div className="text-base font-bold text-red-600">
+            {product.price}
           </div>
-        )}
-        {product.isNew && (
-          <div className="absolute top-1.5 sm:top-3 right-1.5 sm:right-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-xs font-bold shadow-lg">
-            NEW
+          
+          {/* MOQ */}
+          <div className="text-xs text-gray-500">
+            MOQ: <span className="font-medium text-gray-700">{product.moq}</span>
           </div>
-        )}
-        {product.verified && (
-          <div className="absolute bottom-1.5 sm:bottom-3 right-1.5 sm:right-3 bg-white/90 backdrop-blur-sm text-indigo-600 p-1 sm:p-2 rounded-full shadow-lg">
-            <FiShield className="w-3 h-3 sm:w-4 sm:h-4" />
-          </div>
-        )}
+        </div>
       </div>
-      <div className="p-3 sm:p-4 lg:p-6">
-        <h3 className="font-semibold sm:font-bold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base lg:text-lg line-clamp-2 group-hover:text-indigo-600 transition-colors leading-tight">
-          {product.title}
-        </h3>
-        <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
-          <div className="flex items-center">
-            {renderStars(product.rating)}
-          </div>
-          <span className="text-xs sm:text-sm text-gray-500 font-medium">({product.rating})</span>
-        </div>
-        <div className="flex items-center justify-between mb-2 sm:mb-3">
-          <div>
-            <span className="text-base sm:text-lg lg:text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{product.price}</span>
-            {product.originalPrice && (
-              <span className="text-xs sm:text-sm text-gray-400 line-through ml-1 sm:ml-2">
-                {product.originalPrice}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center justify-between text-xs sm:text-sm">
-          <span className="text-gray-500">MOQ: <span className="font-semibold text-gray-700">{product.moq}</span></span>
-          <span className="text-indigo-600 font-semibold truncate max-w-[60px] sm:max-w-none">{product.supplier}</span>
-        </div>
-      </div>
-    </div>
+    </Link>
   );
 
   return (
@@ -404,11 +478,11 @@ export default function Home() {
               {/* Scrollable Products Container */}
               <div 
                 id="new-products-scroll"
-                className="flex gap-3 sm:gap-4 lg:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+                className="flex gap-1 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {newProducts.map((product) => (
-                  <div key={product.id} className="flex-none w-[45%] min-w-[160px] sm:w-72 lg:w-80">
+                  <div key={product.id} className="flex-none w-[32%] min-w-[160px] sm:w-[200px] lg:w-[220px]">
                     <ProductCard product={product} />
                   </div>
                 ))}
@@ -455,11 +529,62 @@ export default function Home() {
               {/* Scrollable Products Container */}
               <div 
                 id="for-you-scroll"
-                className="flex gap-3 sm:gap-4 lg:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+                className="flex gap-1 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {forYouProducts.map((product) => (
-                  <div key={product.id} className="flex-none w-[45%] min-w-[160px] sm:w-72 lg:w-80">
+                  <div key={product.id} className="flex-none w-[32%] min-w-[160px] sm:w-[200px] lg:w-[220px]">
+                    <ProductCard product={product} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Random Products */}
+      <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-yellow-50 to-orange-50">
+        <div className="px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-6 sm:mb-8 lg:mb-12">
+              <div>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold sm:font-bold text-gray-900 mb-1 sm:mb-2">🎲 Discover Something New</h2>
+                <p className="text-sm sm:text-base lg:text-xl text-gray-600 font-normal">Random products from our marketplace</p>
+              </div>
+              <Link href="/products?filter=random" className="flex items-center gap-1 sm:gap-2 text-indigo-600 hover:text-indigo-700 font-medium sm:font-semibold text-sm sm:text-base lg:text-lg group">
+                <span className="hidden sm:inline">View All</span>
+                <span className="sm:hidden">All</span>
+                <FiArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+            
+            {/* Horizontal Scroll Container */}
+            <div className="relative group">
+              {/* Left Arrow */}
+              <button 
+                onClick={() => scrollContainer('random-products-scroll', 'left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
+              >
+                <FiChevronLeft className="w-6 h-6 text-gray-700" />
+              </button>
+              
+              {/* Right Arrow */}
+              <button 
+                onClick={() => scrollContainer('random-products-scroll', 'right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
+              >
+                <FiChevronRight className="w-6 h-6 text-gray-700" />
+              </button>
+              
+              {/* Scrollable Products Container */}
+              <div 
+                id="random-products-scroll"
+                className="flex gap-1 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {randomProducts.map((product) => (
+                  <div key={product.id} className="flex-none w-[32%] min-w-[160px] sm:w-[200px] lg:w-[220px]">
                     <ProductCard product={product} />
                   </div>
                 ))}
@@ -476,7 +601,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-6 sm:mb-8 lg:mb-12">
               <div>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold sm:font-bold text-gray-900 mb-1 sm:mb-2">🏆 Featured Products</h2>
-                <p className="text-sm sm:text-base lg:text-xl text-gray-600 font-normal">Top-rated products from premium suppliers</p>
+                <p className="text-sm sm:text-base lg:text-xl text-gray-600 font-normal">Random selection from our marketplace</p>
               </div>
               <Link href="/products?filter=featured" className="flex items-center gap-1 sm:gap-2 text-indigo-600 hover:text-indigo-700 font-medium sm:font-semibold text-sm sm:text-base lg:text-lg group">
                 <span className="hidden sm:inline">View All</span>
@@ -485,9 +610,9 @@ export default function Home() {
               </Link>
             </div>
             
-            {/* Grid Layout Container */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
-              {featuredProducts.slice(0, 100).map((product) => (
+            {/* Products Grid - Responsive */}
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-1">
+              {featuredProducts.slice(0, 6).map((product) => (
                 <div key={product.id}>
                   <ProductCard product={product} />
                 </div>
@@ -498,24 +623,24 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-8 sm:py-12 lg:py-16 bg-white">
+      <section className="py-4 sm:py-12 lg:py-16 bg-white">
         <div className="px-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-8 sm:mb-10 lg:mb-12">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold sm:font-bold text-gray-900 mb-2 sm:mb-3 lg:mb-4">Why Choose WholesaleHub?</h2>
-              <p className="text-sm sm:text-base lg:text-xl text-gray-600 font-normal">Your trusted partner for B2B success</p>
+            <div className="text-center mb-4 sm:mb-10 lg:mb-12">
+              <h2 className="text-xl sm:text-3xl lg:text-4xl font-semibold sm:font-bold text-gray-900 mb-1 sm:mb-3 lg:mb-4">Why Choose DukanBaz?</h2>
+              <p className="text-xs sm:text-base lg:text-xl text-gray-600 font-normal">Your trusted partner for B2B success</p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-8">
               {features.map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
                   <div key={index} className="text-center group">
-                    <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${feature.color} group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                      <IconComponent className="w-10 h-10" />
+                    <div className={`w-12 h-12 sm:w-20 sm:h-20 mx-auto mb-2 sm:mb-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${feature.color} group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                      <IconComponent className="w-6 h-6 sm:w-10 sm:h-10" />
                     </div>
-                    <h3 className="text-lg sm:text-xl font-semibold sm:font-bold text-gray-900 mb-2 sm:mb-3">{feature.title}</h3>
-                    <p className="text-sm sm:text-base text-gray-600 leading-relaxed font-normal">{feature.description}</p>
+                    <h3 className="text-sm sm:text-xl font-medium sm:font-bold text-gray-900 mb-1 sm:mb-3">{feature.title}</h3>
+                    <p className="text-xs sm:text-base text-gray-600 leading-tight sm:leading-relaxed font-normal">{feature.description}</p>
                   </div>
                 );
               })}

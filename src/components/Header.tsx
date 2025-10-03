@@ -351,117 +351,122 @@ export default function Header({ className = "" }: HeaderProps) {
 
             {/* Actions */}
             <div className="flex items-center space-x-4">
-              {/* User Action Icons */}
-              <div className="flex items-center space-x-2">
-                {/* Cart Icon */}
-                <div 
-                  className="relative"
-                  onMouseEnter={() => setCartHover(true)}
-                  onMouseLeave={() => setCartHover(false)}
-                >
-                  <Link 
-                    href="/cart" 
-                    className="relative p-2 text-gray-600 hover:text-indigo-600 rounded-lg transition-all duration-300"
-                    title="Shopping Cart"
+              {/* User Action Icons - Only show when signed in */}
+              {session?.user && (
+                <div className="flex items-center space-x-2">
+                  {/* Cart Icon */}
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setCartHover(true)}
+                    onMouseLeave={() => setCartHover(false)}
                   >
-                    <FiShoppingCart className="w-5 h-5" />
-                    {cartItems && Array.isArray(cartItems) && cartItems.length > 0 && (
-                      <span className="absolute -top-4 -left-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
-                        {cartItems.length}
-                      </span>
-                    )}
-                  </Link>
-                  
-                  {/* Cart Hover Dropdown */}
-                  <CartHoverDropdown 
-                    isVisible={cartHover} 
-                    onClose={() => setCartHover(false)} 
-                  />
-                </div>
+                    <Link 
+                      href="/cart" 
+                      className="relative p-2 text-gray-600 hover:text-indigo-600 rounded-lg transition-all duration-300"
+                      title="Shopping Cart"
+                    >
+                      <FiShoppingCart className="w-5 h-5" />
+                      {cartItems && Array.isArray(cartItems) && cartItems.length > 0 && (
+                        <span className="absolute -top-4 -left-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
+                          {cartItems.length}
+                        </span>
+                      )}
+                    </Link>
+                    
+                    {/* Cart Hover Dropdown */}
+                    <CartHoverDropdown 
+                      isVisible={cartHover} 
+                      onClose={() => setCartHover(false)} 
+                    />
+                  </div>
 
-                {/* Messages Icon */}
-                <div 
-                  className="relative"
-                  onMouseEnter={() => setMessagesHover(true)}
-                  onMouseLeave={() => setMessagesHover(false)}
-                >
-                  <Link 
-                    href="/messages" 
-                    className="relative p-2 text-gray-600 hover:text-indigo-600 rounded-lg transition-all duration-300"
-                    title="Messages"
+                  {/* Messages Icon */}
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setMessagesHover(true)}
+                    onMouseLeave={() => setMessagesHover(false)}
                   >
-                    <FiMessageCircle className="w-5 h-5" />
-                    {(dashboardData?.messages?.unreadCount || 0) > 0 && (
-                      <span className="absolute -top-4 -left-2 bg-blue-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
-                        {dashboardData?.messages?.unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                  
-                  {/* Messages Hover Popover */}
-                  <MessagesHoverDropdown 
-                    isVisible={messagesHover}
-                    messages={dashboardData?.messages}
-                  />
-                </div>
+                    <Link 
+                      href="/messages"
+                      className="relative p-2 text-gray-600 hover:text-indigo-600 rounded-lg transition-all duration-300"
+                      title="Messages"
+                    >
+                      <FiMessageCircle className="w-5 h-5" />
+                      {(dashboardData?.messages?.unreadCount || 0) > 0 && (
+                        <span className="absolute -top-4 -left-2 bg-blue-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
+                          {dashboardData?.messages?.unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                    
+                    {/* Messages Hover Popover */}
+                    <MessagesHoverDropdown 
+                      isVisible={messagesHover}
+                      messages={dashboardData?.messages}
+                    />
+                  </div>
 
-                {/* Orders Icon */}
-                <div 
-                  className="relative"
-                  onMouseEnter={() => setOrdersHover(true)}
-                  onMouseLeave={() => setOrdersHover(false)}
-                >
-                  <Link 
-                    href="/orders" 
-                    className="relative p-2 text-gray-600 hover:text-indigo-600 rounded-lg transition-all duration-300"
-                    title="Orders"
+                  {/* Orders Icon */}
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setOrdersHover(true)}
+                    onMouseLeave={() => setOrdersHover(false)}
                   >
-                    <FiClipboard className="w-5 h-5" />
-                    {(dashboardData?.orders?.pendingCount || 0) > 0 && (
-                      <span className="absolute -top-4 -left-2 bg-orange-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
-                        {dashboardData?.orders?.pendingCount}
-                      </span>
-                    )}
-                  </Link>
-                  
-                  {/* Orders Hover Popover */}
-                  <OrdersHoverDropdown 
-                    isVisible={ordersHover}
-                    orders={dashboardData?.orders}
-                  />
-                </div>
+                    <Link 
+                      href="/orders"
+                      className="relative p-2 text-gray-600 hover:text-indigo-600 rounded-lg transition-all duration-300"
+                      title="Orders"
+                    >
+                      <FiClipboard className="w-5 h-5" />
+                      {(dashboardData?.orders?.pendingCount || 0) > 0 && (
+                        <span className="absolute -top-4 -left-2 bg-orange-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
+                          {dashboardData?.orders?.pendingCount}
+                        </span>
+                      )}
+                    </Link>
+                    
+                    {/* Orders Hover Popover */}
+                    <OrdersHoverDropdown 
+                      isVisible={ordersHover}
+                      orders={dashboardData?.orders}
+                    />
+                  </div>
 
-                {/* Profile Icon */}
-                <div 
-                  className="relative"
-                  onMouseEnter={() => setProfileHover(true)}
-                  onMouseLeave={() => setProfileHover(false)}
-                >
-                  <Link 
-                    href="/profile" 
-                    className="relative p-2 text-gray-600 hover:text-indigo-600 rounded-lg transition-all duration-300"
-                    title="Profile"
+                  {/* Profile Icon */}
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setProfileHover(true)}
+                    onMouseLeave={() => setProfileHover(false)}
                   >
-                    <FiUser className="w-5 h-5" />
-                  </Link>
-                  
-                  {/* Profile Hover Popover */}
-                  <ProfileHoverDropdown 
-                    isVisible={profileHover}
-                    user={session?.user as { name?: string; email?: string; image?: string } | undefined}
-                  />
+                    <Link 
+                      href="/profile"
+                      className="relative p-2 text-gray-600 hover:text-indigo-600 rounded-lg transition-all duration-300"
+                      title="Profile"
+                    >
+                      <FiUser className="w-5 h-5" />
+                    </Link>
+                    
+                    {/* Profile Hover Popover */}
+                    <ProfileHoverDropdown 
+                      isVisible={profileHover}
+                      user={session?.user as { name?: string; email?: string; image?: string } | undefined}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Authentication Buttons */}
               <div className="flex items-center space-x-3">
                 {session ? (
-                  <Link 
-                    href={session.user?.email?.includes('supplier') ? '/supplier-dashboard' : '/supplier-dashboard'}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all duration-300 hover:scale-105"
-                  >
-                    Dashboard
-                  </Link>
+                  // Only show dashboard button for suppliers
+                  (session.user as any)?.role === 'supplier' && (
+                    <Link 
+                      href="/supplier-dashboard"
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all duration-300 hover:scale-105"
+                    >
+                      Dashboard
+                    </Link>
+                  )
                 ) : (
                   <>
                     <Link 
@@ -575,7 +580,10 @@ export default function Header({ className = "" }: HeaderProps) {
             {session ? (
               <div className="space-y-2">
                 <Link href="/profile" className="block py-2 text-gray-700 hover:text-indigo-600 transition-colors">Profile</Link>
-                <Link href="/supplier-dashboard" className="block py-2 text-indigo-600 hover:text-indigo-700 transition-colors">Dashboard</Link>
+                {/* Only show dashboard link for suppliers */}
+                {(session.user as any)?.role === 'supplier' && (
+                  <Link href="/supplier-dashboard" className="block py-2 text-indigo-600 hover:text-indigo-700 transition-colors">Dashboard</Link>
+                )}
               </div>
             ) : (
               <div className="space-y-2">

@@ -2,6 +2,7 @@
 import Head from "next/head";
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import DashboardSidebar from '../../../components/DashboardSidebar';
 import {
   FiSearch,
   FiPackage,
@@ -110,6 +111,7 @@ export default function SupplierOrdersPage() {
   const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
   const [modalOrder, setModalOrder] = useState<Order | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Fetch orders using useCallback to avoid dependency issues
   const fetchOrders = useCallback(async () => {
@@ -331,141 +333,131 @@ export default function SupplierOrdersPage() {
       <Head>
         <title>Orders – WholesaleHub</title>
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-        <div className="container mx-auto px-4 py-8">
-          {/* Modern Header */}
-          <div className="relative mb-12">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 rounded-3xl opacity-10"></div>
-            <div className="relative bg-white/80 backdrop-blur-sm border border-white/50 rounded-3xl p-8 shadow-xl">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <FiShoppingCart className="w-8 h-8 text-white" />
-                    </div>
-                    <div>
-                      <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Order Management</h1>
-                      <p className="text-gray-600 text-lg">Track, manage, and fulfill your customer orders with ease</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button className="group flex items-center gap-3 px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl hover:border-indigo-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-indigo-50 hover:text-indigo-700 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg">
-                    <FiDownload className="w-5 h-5 transition-transform group-hover:-translate-y-0.5" />
-                    <span className="font-semibold">Export Orders</span>
-                  </button>
-                  <button className="group flex items-center gap-3 px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl hover:border-purple-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-purple-50 hover:text-purple-700 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg">
-                    <FiRefreshCw className="w-5 h-5 transition-transform group-hover:rotate-180" />
-                    <span className="font-semibold">Refresh</span>
-                  </button>
-                  <button className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl shadow-indigo-500/25">
-                    <FiPrinter className="w-5 h-5" />
-                    <span className="font-semibold">Print Labels</span>
-                  </button>
-                </div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <DashboardSidebar 
+          sidebarOpen={sidebarOpen} 
+          setSidebarOpen={setSidebarOpen} 
+          userRole="supplier" 
+        />
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <div className="container mx-auto px-4 py-8">
+          {/* Clean Professional Header */}
+          <div className="mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Management</h1>
+                <p className="text-gray-600">Track, manage, and fulfill your customer orders</p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors">
+                  <FiDownload className="w-4 h-4" />
+                  Export
+                </button>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                >
+                  <FiRefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                  <FiPrinter className="w-4 h-4" />
+                  Print Labels
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Modern Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {/* Clean Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {[
-              { title: "Total Orders", value: stats.total, icon: FiShoppingCart, gradient: "from-blue-500 to-cyan-500", change: "+12%", trend: "up" },
-              { title: "Pending Orders", value: stats.pending, icon: FiClock, gradient: "from-amber-500 to-orange-500", change: "+3", trend: "up" },
-              { title: "Shipped Orders", value: stats.shipped, icon: FiTruck, gradient: "from-purple-500 to-indigo-500", change: "+8", trend: "up" },
-              { title: "Total Revenue", value: `PKR ${stats.revenue.toLocaleString()}`, icon: FiDollarSign, gradient: "from-emerald-500 to-green-500", change: "+15%", trend: "up" }
+              { title: "Total Orders", value: stats.total, icon: FiShoppingCart, color: "blue" },
+              { title: "Pending Orders", value: stats.pending, icon: FiClock, color: "orange" },
+              { title: "Shipped Orders", value: stats.shipped, icon: FiTruck, color: "green" },
+              { title: "Total Revenue", value: `PKR ${stats.revenue.toLocaleString()}`, icon: FiDollarSign, color: "purple" }
             ].map((stat, index) => (
-              <div 
-                key={index} 
-                className={`group relative bg-white/80 backdrop-blur-sm border border-white/50 rounded-3xl p-6 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 animate-fade-in overflow-hidden`} 
-                style={{ animationDelay: `${index * 150}ms` }}
-              >
-                {/* Gradient Background Effect */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-5 group-hover:opacity-10 transition-opacity duration-300 rounded-3xl`}></div>
-                
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-r ${stat.gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}>
-                      <stat.icon className="w-7 h-7 text-white" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${stat.gradient} animate-pulse`}></div>
-                      <span className={`text-sm font-bold px-3 py-1 rounded-full ${
-                        stat.trend === 'up' ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50'
-                      }`}>
-                        {stat.change}
-                      </span>
-                    </div>
+              <div key={index} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900 group-hover:text-gray-800 transition-colors">{stat.value}</p>
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                    stat.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                    stat.color === 'orange' ? 'bg-orange-100 text-orange-600' :
+                    stat.color === 'green' ? 'bg-green-100 text-green-600' :
+                    'bg-purple-100 text-purple-600'
+                  }`}>
+                    <stat.icon className="w-6 h-6" />
                   </div>
                 </div>
-                
-                {/* Hover Effect Border */}
-                <div className={`absolute inset-0 rounded-3xl border-2 border-transparent group-hover:border-gradient-to-r group-hover:${stat.gradient} opacity-0 group-hover:opacity-20 transition-all duration-300`}></div>
               </div>
             ))}
           </div>
 
-          {/* Modern Search and Filters */}
-          <div className="relative mb-12">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-indigo-800/10 rounded-3xl"></div>
-            <div className="relative bg-white/80 backdrop-blur-sm border border-white/50 rounded-3xl p-8 shadow-xl">
-              <div className="flex flex-col lg:flex-row gap-6">
-                <div className="flex-1">
-                  <div className="relative group">
-                    <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors" />
-                    <input
-                      type="text"
-                      placeholder="Search orders by ID, buyer, or product..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 bg-white/70 border-2 border-gray-200 rounded-2xl focus:border-indigo-500 focus:bg-white transition-all duration-300 text-gray-900 placeholder-gray-500 shadow-sm focus:shadow-lg"
+          {/* Clean Search and Filters */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search orders by ID, buyer, or product..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
-
-              <div className="flex flex-wrap gap-4">
+              
+              <div className="flex flex-wrap gap-3">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-2xl focus:border-purple-500 focus:bg-white transition-all duration-300 text-gray-900 shadow-sm focus:shadow-lg min-w-[140px]"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[140px]"
                 >
-                  {statusOptions.map(status => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
+                  <option value="All">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="processing">Processing</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
                 </select>
 
                 <select
                   value={paymentStatusFilter}
                   onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                  className="px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-2xl focus:border-purple-500 focus:bg-white transition-all duration-300 text-gray-900 shadow-sm focus:shadow-lg min-w-[160px]"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[160px]"
                 >
-                  {paymentStatusOptions.map(status => (
-                    <option key={status} value={status}>{status === 'All' ? 'All Payment Status' : status.charAt(0).toUpperCase() + status.slice(1)}</option>
-                  ))}
+                  <option value="All">All Payments</option>
+                  <option value="paid">Paid</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
                 </select>
 
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-2xl focus:border-purple-500 focus:bg-white transition-all duration-300 text-gray-900 shadow-sm focus:shadow-lg min-w-[120px]"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[120px]"
                 >
-                  <option value="createdAt">Date</option>
-                  <option value="totalAmount">Total</option>
-                  <option value="orderNumber">Order Number</option>
-                  <option value="buyerName">Buyer</option>
+                  <option value="createdAt">Sort by Date</option>
+                  <option value="totalAmount">Sort by Total</option>
+                  <option value="orderNumber">Sort by Order #</option>
+                  <option value="buyerName">Sort by Buyer</option>
                 </select>
 
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  className="group flex items-center justify-center w-12 h-12 bg-white/70 border-2 border-gray-200 rounded-2xl hover:border-indigo-500 hover:bg-white transition-all duration-300 shadow-sm hover:shadow-lg"
+                  className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  title={`Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
                 >
                   {sortOrder === 'asc' ? 
-                    <FiChevronUp className="w-5 h-5 text-gray-600 group-hover:text-indigo-600 transition-colors" /> : 
-                    <FiChevronDown className="w-5 h-5 text-gray-600 group-hover:text-indigo-600 transition-colors" />
+                    <FiChevronUp className="w-4 h-4 text-gray-600" /> : 
+                    <FiChevronDown className="w-4 h-4 text-gray-600" />
                   }
                 </button>
               </div>
@@ -473,59 +465,68 @@ export default function SupplierOrdersPage() {
           </div>
 
           {/* Orders List */}
-          <div className="card-glass p-6">
-            <div className="space-y-4">
-              {filteredOrders.map((order) => {
-                const mainProduct = getMainProduct(order.products);
-                const totalQuantity = getTotalQuantity(order.products);
-                return (
-                <div 
-                  key={order._id} 
-                  className="bg-white rounded-lg border-l-4 border-l-indigo-400 shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  {/* Order Header */}
-                  <div className="p-4">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <img 
-                          src={mainProduct.productImage || '/placeholder-product.jpg'} 
-                          alt={mainProduct.productName} 
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-gray-900">{order.orderNumber}</h3>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${statusColors[order.status].bg} ${statusColors[order.status].text}`}>
-                              {getStatusIcon(order.status)}
-                              <span className="ml-1">{order.status}</span>
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600">{mainProduct.productName}{getVariationDisplay(mainProduct)}</p>
-                          <p className="text-sm text-gray-500">{order.buyerName}</p>
+          <div className="space-y-4">
+            {filteredOrders.map((order) => {
+              const mainProduct = getMainProduct(order.products);
+              const totalQuantity = getTotalQuantity(order.products);
+              return (
+              <div 
+                key={order._id} 
+                className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
+              >
+                {/* Order Header */}
+                <div className="p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <img 
+                        src={mainProduct.productImage || '/placeholder-product.jpg'} 
+                        alt={mainProduct.productName} 
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{order.orderNumber}</h3>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                            order.status === 'processing' ? 'bg-purple-100 text-purple-800' :
+                            order.status === 'shipped' ? 'bg-indigo-100 text-indigo-800' :
+                            order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {getStatusIcon(order.status)}
+                            <span className="ml-1 capitalize">{order.status}</span>
+                          </span>
+                        </div>
+                        <p className="text-gray-600 font-medium mb-1">{mainProduct.productName}{getVariationDisplay(mainProduct)}</p>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <FiUser className="w-4 h-4" />
+                            {order.buyerName}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FiCalendar className="w-4 h-4" />
+                            {formatDate(order.createdAt)}
+                          </span>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-900">{formatCurrency(order.totalAmount)}</p>
-                          <p className="text-sm text-gray-500">{totalQuantity} units</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log('Details clicked for order:', order._id);
-                              alert('Details button clicked!');
-                              toggleExpandOrder(order._id);
-                            }}
-                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                            style={{ pointerEvents: 'auto', zIndex: 10 }}
-                          >
-                            {expandedOrders.includes(order._id) ? '▲' : '▼'} Details
-                          </button>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-gray-900">{formatCurrency(order.totalAmount)}</p>
+                        <p className="text-sm text-gray-500">{totalQuantity} units total</p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setModalOrder(order)}
+                          className="flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <FiEye className="w-4 h-4" />
+                          View Details
+                        </button>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1018,8 +1019,9 @@ export default function SupplierOrdersPage() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+            </div>
+          </div>
+        
     </>
   );
 }

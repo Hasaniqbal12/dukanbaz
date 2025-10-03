@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Header from '../../../components/Header';
+import DashboardSidebar from '../../../components/DashboardSidebar';
 import Link from 'next/link';
 import { 
   FiPlus, 
@@ -16,7 +17,8 @@ import {
   FiBarChart,
   FiTrendingUp,
   FiAlertCircle,
-  FiRefreshCw
+  FiRefreshCw,
+  FiDownload
 } from 'react-icons/fi';
 
 interface Product {
@@ -65,6 +67,7 @@ export default function ManageProductsPage() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState<ProductStats>({
@@ -236,87 +239,77 @@ export default function ManageProductsPage() {
   if (status === 'loading') {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
   }
-
   if (!session || session.user?.role !== 'supplier') {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header showMegaMenu={false} />
+    <div className="min-h-screen bg-gray-50 flex">
+      <DashboardSidebar 
+        sidebarOpen={sidebarOpen} 
+        setSidebarOpen={setSidebarOpen} 
+        userRole="supplier" 
+      />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <div className="container mx-auto px-4 py-8">
+        {/* Clean Professional Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Products</h1>
-              <p className="text-gray-600">Manage your product catalog and inventory</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Product Management</h1>
+              <p className="text-gray-600">Manage your product catalog, inventory, and performance</p>
             </div>
             
-            <Link
-              href="/add-product"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              <FiPlus className="w-5 h-5" />
-              Add Product
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors">
+                <FiDownload className="w-4 h-4" />
+                Export Products
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors">
+                <FiRefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
+              <Link
+                href="/add-product"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                <FiPlus className="w-4 h-4" />
+                Add Product
+              </Link>
+            </div>
           </div>
 
-          {/* Stats Cards */}
+          {/* Clean Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Products</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                </div>
-                <div className="bg-blue-100 p-3 rounded-full">
-                  <FiPackage className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900">PKR {stats.totalRevenue.toLocaleString()}</p>
-                </div>
-                <div className="bg-green-100 p-3 rounded-full">
-                  <FiDollarSign className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Views</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalViews.toLocaleString()}</p>
-                </div>
-                <div className="bg-purple-100 p-3 rounded-full">
-                  <FiBarChart className="w-6 h-6 text-purple-600" />
+            {[
+              { title: "Total Products", value: stats.total, icon: FiPackage, color: "blue" },
+              { title: "Total Revenue", value: `PKR ${stats.totalRevenue.toLocaleString()}`, icon: FiDollarSign, color: "green" },
+              { title: "Total Views", value: stats.totalViews.toLocaleString(), icon: FiBarChart, color: "purple" },
+              { title: "Units Sold", value: stats.totalSold.toLocaleString(), icon: FiTrendingUp, color: "orange" }
+            ].map((stat, index) => (
+              <div key={index} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                    stat.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                    stat.color === 'green' ? 'bg-green-100 text-green-600' :
+                    stat.color === 'purple' ? 'bg-purple-100 text-purple-600' :
+                    'bg-orange-100 text-orange-600'
+                  }`}>
+                    <stat.icon className="w-6 h-6" />
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Units Sold</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalSold.toLocaleString()}</p>
-                </div>
-                <div className="bg-orange-100 p-3 rounded-full">
-                  <FiTrendingUp className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        {/* Clean Filters and Search */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {/* Search */}
             <div className="relative">
@@ -406,209 +399,140 @@ export default function ManageProductsPage() {
           )}
         </div>
 
-        {/* Products Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <FiRefreshCw className="w-8 h-8 animate-spin text-blue-600" />
-              <span className="ml-2 text-gray-600">Loading products...</span>
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center py-12">
-              <FiAlertCircle className="w-8 h-8 text-red-600" />
-              <span className="ml-2 text-red-600">{error}</span>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="text-center py-12">
-              <FiPackage className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-              <p className="text-gray-600 mb-6">Start by adding your first product to your catalog</p>
-              <Link
-                href="/add-product"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg inline-flex items-center gap-2"
-              >
-                <FiPlus className="w-5 h-5" />
-                Add Product
-              </Link>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left">
+        {/* Modern Product Cards */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <FiRefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="ml-2 text-gray-600">Loading products...</span>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center py-12">
+            <FiAlertCircle className="w-8 h-8 text-red-600" />
+            <span className="ml-2 text-red-600">{error}</span>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <FiPackage className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p className="text-gray-600 mb-6">Start by adding your first product to your catalog</p>
+            <Link
+              href="/add-product"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg inline-flex items-center gap-2"
+            >
+              <FiPlus className="w-5 h-5" />
+              Add Product
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {products.map((product) => (
+              <div key={product._id} className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                    {/* Product Image & Info */}
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="relative">
                         <input
                           type="checkbox"
-                          checked={selectedProducts.length === products.length}
+                          checked={selectedProducts.includes(product._id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedProducts(products.map(p => p._id));
+                              setSelectedProducts([...selectedProducts, product._id]);
                             } else {
-                              setSelectedProducts([]);
+                              setSelectedProducts(selectedProducts.filter(id => id !== product._id));
                             }
                           }}
-                          className="rounded border-gray-300"
+                          className="absolute top-2 left-2 rounded border-gray-300 z-10"
                         />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Stock
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Performance
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {products.map((product) => (
-                      <tr key={product._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedProducts.includes(product._id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedProducts([...selectedProducts, product._id]);
-                              } else {
-                                setSelectedProducts(selectedProducts.filter(id => id !== product._id));
-                              }
-                            }}
-                            className="rounded border-gray-300"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <img
-                              src={product.images[0] || '/placeholder-product.jpg'}
-                              alt={product.title}
-                              className="w-12 h-12 rounded-lg object-cover mr-4"
-                            />
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {product.title}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                MOQ: {product.moq}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {product.category}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          <div>
-                            <div className="font-medium">PKR {product.price.toLocaleString()}</div>
-                            <div className="text-xs text-gray-500">per {product.unit}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          <div className={`${
-                            product.available === 0 ? 'text-red-600' : 
-                            product.available < 100 ? 'text-yellow-600' : 'text-green-600'
-                          }`}>
-                            {product.available} {product.unit}s
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <select
-                            value={product.status}
-                            onChange={(e) => toggleStatus(product._id, e.target.value)}
-                            className={`text-xs px-2 py-1 rounded-full border-0 ${
-                              product.status === 'active' ? 'bg-green-100 text-green-800' :
-                              product.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                              product.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                              'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            <option value="active">Active</option>
-                            <option value="draft">Draft</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="outofstock">Out of Stock</option>
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          <div>
-                            <div className="text-xs text-gray-500">Views: {product.views}</div>
-                            <div className="text-xs text-gray-500">Sold: {product.sold}</div>
-                            <div className="text-xs text-gray-500">Rating: {product.rating}/5</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={`/product/${product._id}`}
-                              className="text-blue-600 hover:text-blue-800 p-1"
-                              title="View Product"
-                            >
-                              <FiEye className="w-4 h-4" />
-                            </Link>
-                            <Link
-                              href={`/add-product?edit=${product._id}`}
-                              className="text-green-600 hover:text-green-800 p-1"
-                              title="Edit Product"
-                            >
-                              <FiEdit3 className="w-4 h-4" />
-                            </Link>
-                            <button
-                              onClick={() => {
-                                setProductToDelete(product._id);
-                                setShowDeleteModal(true);
-                              }}
-                              className="text-red-600 hover:text-red-800 p-1"
-                              title="Delete Product"
-                            >
-                              <FiTrash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        <img
+                          src={product.images[0] || '/placeholder-product.jpg'}
+                          alt={product.title}
+                          className="w-20 h-20 rounded-lg object-cover border border-gray-200"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">{product.title}</h3>
+                        <p className="text-gray-600 text-sm mb-2 line-clamp-2">{product.description}</p>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">{product.category}</span>
+                          <span>MOQ: {product.moq}</span>
+                        </div>
+                      </div>
+                    </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="bg-gray-50 px-6 py-3 flex items-center justify-between">
-                  <div className="text-sm text-gray-700">
-                    Page {currentPage} of {totalPages}
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1 bg-white border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1 bg-white border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
+                    {/* Product Stats */}
+                    <div className="flex flex-col sm:flex-row lg:flex-col gap-4 lg:gap-2 lg:text-right">
+                      <div>
+                        <p className="text-xl font-bold text-gray-900">PKR {product.price.toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">per {product.unit}</p>
+                      </div>
+                      <div className="flex items-center gap-4 lg:justify-end">
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-900">{product.available}</p>
+                          <p className="text-xs text-gray-500">Stock</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-900">{product.views}</p>
+                          <p className="text-xs text-gray-500">Views</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-900">{product.sold}</p>
+                          <p className="text-xs text-gray-500">Sold</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status & Actions */}
+                    <div className="flex flex-col gap-3 lg:items-end">
+                      <select
+                        value={product.status}
+                        onChange={(e) => toggleStatus(product._id, e.target.value)}
+                        className={`text-xs px-3 py-1 rounded-full border-0 font-medium ${
+                          product.status === 'active' ? 'bg-green-100 text-green-800' :
+                          product.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                          product.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
+                          'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        <option value="active">Active</option>
+                        <option value="draft">Draft</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="outofstock">Out of Stock</option>
+                      </select>
+                      
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/product/${product._id}`}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View Product"
+                        >
+                          <FiEye className="w-4 h-4" />
+                        </Link>
+                        <Link
+                          href={`/add-product?edit=${product._id}`}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Edit Product"
+                        >
+                          <FiEdit3 className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setProductToDelete(product._id);
+                            setShowDeleteModal(true);
+                          }}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Product"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
-            </>
-          )}
+              </div>
+            ))}
+          </div>
+        )}
         </div>
 
         {/* Delete Confirmation Modal */}
@@ -636,7 +560,13 @@ export default function ManageProductsPage() {
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
+  
   );
-} 
+}
+
+  
+

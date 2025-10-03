@@ -42,6 +42,25 @@ export interface IBusinessInfo {
   certifications?: string[];
 }
 
+export interface IBuyerProfile {
+  productCategories?: string[];
+  budgetRange?: string;
+  orderFrequency?: string;
+  preferredSuppliers?: string[];
+  paymentTerms?: string;
+  creditLimit?: string;
+}
+
+export interface ISupplierProfile {
+  productCategories?: string[];
+  minOrderQuantity?: string;
+  productionCapacity?: string;
+  certifications?: string[];
+  shippingMethods?: string[];
+  paymentTerms?: string;
+  minimumOrder?: string;
+}
+
 export interface IUser extends Document {
   name: string;
   email: string;
@@ -59,19 +78,22 @@ export interface IUser extends Document {
   address?: IAddress;
   businessInfo?: IBusinessInfo;
   membership?: IMembership;
+  buyerProfile?: IBuyerProfile;
+  supplierProfile?: ISupplierProfile;
   avatar?: string;
   lastLogin?: Date;
   deletedAt?: Date;
+  setupCompletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const AddressSchema = new Schema<IAddress>({
-  street: { type: String, required: true },
-  city: { type: String, required: true },
-  state: { type: String, required: true },
-  postalCode: { type: String, required: true },
-  country: { type: String, required: true, default: 'Pakistan' }
+  street: { type: String },
+  city: { type: String },
+  state: { type: String },
+  postalCode: { type: String },
+  country: { type: String, default: 'Pakistan' }
 }, { _id: false });
 
 const BusinessInfoSchema = new Schema<IBusinessInfo>({
@@ -118,6 +140,25 @@ const MembershipSchema = new Schema<IMembership>({
   }]
 }, { _id: false });
 
+const BuyerProfileSchema = new Schema<IBuyerProfile>({
+  productCategories: [{ type: String }],
+  budgetRange: { type: String },
+  orderFrequency: { type: String },
+  preferredSuppliers: [{ type: String }],
+  paymentTerms: { type: String },
+  creditLimit: { type: String }
+}, { _id: false });
+
+const SupplierProfileSchema = new Schema<ISupplierProfile>({
+  productCategories: [{ type: String }],
+  minOrderQuantity: { type: String },
+  productionCapacity: { type: String },
+  certifications: [{ type: String }],
+  shippingMethods: [{ type: String }],
+  paymentTerms: { type: String },
+  minimumOrder: { type: String }
+}, { _id: false });
+
 const UserSchema = new Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -140,9 +181,12 @@ const UserSchema = new Schema<IUser>({
   address: { type: AddressSchema },
   businessInfo: { type: BusinessInfoSchema },
   membership: { type: MembershipSchema },
+  buyerProfile: { type: BuyerProfileSchema },
+  supplierProfile: { type: SupplierProfileSchema },
   avatar: { type: String },
   lastLogin: { type: Date },
-  deletedAt: { type: Date }
+  deletedAt: { type: Date },
+  setupCompletedAt: { type: Date }
 }, { timestamps: true });
 
 // Indexes for better query performance (email index is handled by unique: true)

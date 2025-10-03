@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import Header from '../../components/Header';
 import ImageUpload from '../../components/ImageUpload';
+import DashboardSidebar from '../../components/DashboardSidebar';
 import { 
   FiPlus, 
   FiMinus, 
@@ -94,6 +94,7 @@ export default function AddProductPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; originalName?: string }>>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [formData, setFormData] = useState<ProductFormData>({
     title: '',
@@ -458,21 +459,24 @@ export default function AddProductPage() {
   if (status === 'loading') {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
   }
-
   if (!session || session.user?.role !== 'supplier') {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <Header showMegaMenu={false} />
+    <div className="min-h-screen bg-gray-50 flex">
+      <DashboardSidebar 
+        sidebarOpen={sidebarOpen} 
+        setSidebarOpen={setSidebarOpen} 
+        userRole="supplier" 
+      />
       
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Modern Header */}
-        <div className="mb-10">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl mb-4">
-              <FiPlus className="w-8 h-8 text-white" />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        
+        
+        <div className="flex-1 overflow-y-auto">
+          <div className="container mx-auto px-4 py-8 max-w-5xl">
+            <div className="mb-10">
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
               Add New Product
@@ -1454,6 +1458,6 @@ export default function AddProductPage() {
         </div>
       </div>
     </div>
-    </div>
+  </div>
   );
 }

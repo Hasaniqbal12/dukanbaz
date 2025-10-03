@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,14 +20,19 @@ import {
 export default function BuyerSetupPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isWelcome = searchParams.get('welcome') === 'true';
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<any>({});
+  const [showWelcome, setShowWelcome] = useState(isWelcome);
 
   // API Functions
   const saveStepData = async (stepNumber: number, data: any) => {
     try {
       setSaving(true);
       setErrors({});
+      
+      console.log('Sending setup data:', { step: stepNumber, data, role: 'buyer' });
       
       const response = await fetch('/api/profile/setup', {
         method: 'POST',
@@ -41,10 +46,22 @@ export default function BuyerSetupPage() {
         }),
       });
 
-      const result = await response.json();
+      let result: any = null;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        // If JSON parsing fails, create a generic error
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        throw new Error('Invalid response from server');
+      }
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to save data');
+        const errorMessage = (result && typeof result === 'object' && result.error) 
+          ? result.error 
+          : `Server error: ${response.status} ${response.statusText}`;
+        throw new Error(errorMessage);
       }
 
       return result;
@@ -212,28 +229,25 @@ export default function BuyerSetupPage() {
 
     switch (step) {
       case 1:
+        // Only company name is required, others are optional
         if (!formData.companyName) newErrors.companyName = "Company name is required";
-        if (!formData.businessType) newErrors.businessType = "Business type is required";
-        if (!formData.industry) newErrors.industry = "Industry is required";
-        if (!formData.companySize) newErrors.companySize = "Company size is required";
         break;
       case 2:
-        if (!formData.contactPerson) newErrors.contactPerson = "Contact person is required";
-        if (!formData.email) newErrors.email = "Email is required";
+        // Only basic contact info is required
         if (!formData.phone) newErrors.phone = "Phone number is required";
-        if (!formData.state) newErrors.state = "State is required";
-        if (!formData.city) newErrors.city = "City is required";
+        // Address fields are optional
         break;
       case 3:
-        if (!formData.businessLicense) newErrors.businessLicense = "Business license is required";
-        if (!formData.description) newErrors.description = "Company description is required";
+        // All business details are optional
+        // Users can skip this step entirely
         break;
       case 4:
-        if (formData.productCategories.length === 0) newErrors.productCategories = "Select at least one product category";
-        if (!formData.budgetRange) newErrors.budgetRange = "Budget range is required";
+        // All purchasing details are optional
+        // Users can skip this step entirely
         break;
       case 5:
-        if (!formData.paymentTerms) newErrors.paymentTerms = "Payment terms are required";
+        // All payment terms are optional
+        // Users can skip this step entirely
         break;
     }
 
